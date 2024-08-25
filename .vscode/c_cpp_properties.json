@@ -1,0 +1,27 @@
+{
+  "configurations": [
+    {
+      "browse": {
+        "databaseFilename": "${default}",
+        "limitSymbolsToIncludedHeaders": false
+      },
+      "includePath": [
+        "/home/subho/catkin_w_s/devel/include/**",
+        "/opt/ros/noetic/include/**",
+        "/home/subho/catkin_w_s/src/control_scripts/include/**",
+        "/home/subho/catkin_w_s/src/mavros/libmavconn/include/**",
+        "/home/subho/catkin_w_s/src/mavros/mavros/include/**",
+        "/home/subho/catkin_w_s/src/mavros/mavros_msgs/include/**",
+        "/home/subho/catkin_w_s/src/quadcopter_perception/include/**",
+        "/home/subho/catkin_w_s/src/mavros/test_mavros/include/**",
+        "/usr/include/**"
+      ],
+      "name": "ROS",
+      "intelliSenseMode": "gcc-arm64",
+      "compilerPath": "/usr/bin/gcc",
+      "cStandard": "gnu11",
+      "cppStandard": "c++14"
+    }
+  ],
+  "version": 4
+}

@@ -1,0 +1,8 @@
+prefix=/usr/local
+
+Name: dd_stl_stt
+Description: Description of dd_stl_stt
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 
