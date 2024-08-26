@@ -6,7 +6,8 @@ from geometry_msgs.msg import Twist
 
 def gammas(degree, dimension, t):
         '''method to calculate tube equations'''
-        C = []
+        C = [0.00416667, 0.5, 0, 0.00416667, 0.48936736, 0.00265816,
+            0.50833333, 0.5, 0, 0.50833333, 0.51568315, -0.00265816]
         
         vel_tubes = np.zeros(2 * dimension)
         for i in range(2 * dimension): #for 4 tube equations
@@ -30,6 +31,7 @@ def follow_equation(start_time, end_time):
 
     while not rospy.is_shutdown():
         current_time = rospy.Time.now().to_sec() - start_time
+        # rospy.loginfo("Time stamp")
         x_vel , y_vel = gammas(2, 2, current_time)
         vel_msg = Twist()
         vel_msg.linear.x = x_vel
