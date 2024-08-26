@@ -31,7 +31,6 @@ def follow_equation(start_time, end_time):
 
     while not rospy.is_shutdown():
         current_time = rospy.Time.now().to_sec() - start_time
-        # rospy.loginfo("Time stamp")
         x_vel , y_vel = gammas(2, 2, current_time)
         vel_msg = Twist()
         vel_msg.linear.x = x_vel
