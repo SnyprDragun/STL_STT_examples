@@ -21,7 +21,7 @@ def gammas(degree, dimension, t):
         gamma1_L, gamma2_L, gamma1_U, gamma2_U = vel_tubes[0], vel_tubes[1], vel_tubes[2], vel_tubes[3]
         x_vel = (gamma1_L + gamma1_U)/2
         y_vel = (gamma2_L + gamma2_U)/2
-        return x_vel, y_vel
+        return [x_vel, y_vel]
 
 def follow_equation(start_time, end_time):
     rospy.init_node('stt_follower', anonymous=True)
@@ -31,7 +31,8 @@ def follow_equation(start_time, end_time):
 
     while not rospy.is_shutdown():
         current_time = rospy.Time.now().to_sec() - start_time
-        x_vel , y_vel = gammas(2, 2, current_time)
+        x_vel = gammas(2, 2, current_time)[0]
+        y_vel = gammas(2, 2, current_time)[1]
         vel_msg = Twist()
         vel_msg.linear.x = x_vel
         vel_msg.linear.y = y_vel
