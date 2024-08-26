@@ -1,9 +1,29 @@
 #!/usr/bin/env python3
 
 import rospy
+import numpy as np
 from geometry_msgs.msg import Twist
 
-def publish_velocity():
+def gammas(degree, dimension, t):
+        '''method to calculate tube equations'''
+        C = [0.00416667, 0.5, 0, 0.00416667, 0.48936736, 0.00265816,
+            0.50833333, 0.5, 0, 0.50833333, 0.51568315, -0.00265816]
+    
+        vel_tubes = np.zeros(2 * dimension)
+        for i in range(2 * dimension): #for 4 tube equations
+            power = 0
+            for j in range(degree + 1): #each tube eq has {degree+1} terms
+                if power > 0:
+                    vel_tubes[i] += power * ((C[j + i * (degree + 1)]) * (t ** (power - 1)))
+                else:
+                    vel_tubes[i] += 0
+                power += 1
+        gamma1_L, gamma2_L, gamma1_U, gamma2_U = vel_tubes[0], vel_tubes[1], vel_tubes[2], vel_tubes[3]
+        x_vel = (gamma1_L + gamma1_U)/2
+        y_vel = (gamma2_L + gamma2_U)/2
+        return [x_vel, y_vel]
+
+def publish_velocity(end_time):
     rospy.init_node('velocity_publisher', anonymous=True)
     velocity_publisher = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
     
@@ -17,8 +37,8 @@ def publish_velocity():
         time_elapsed += 0.05
 
         # Set linear velocities in both x and y directions
-        twist.linear.x = 0.5  # Constant velocity in the x-direction
-        twist.linear.y = 0.5  # Constant velocity in the y-direction
+        twist.linear.x = gammas(2, 2, time_elapsed)[0]  # Constant velocity in the x-direction
+        twist.linear.y = gammas(2, 2, time_elapsed)[1]  # Constant velocity in the y-direction
         twist.angular.z = 0.0  # Keep angular velocity constant for simplicity
 
         # Publish the velocity
@@ -27,12 +47,17 @@ def publish_velocity():
         rospy.loginfo("Time: {:.2f}s, Publishing velocity - Linear: x: {:.2f} m/s, y: {:.2f} m/s, Angular: {:.2f} rad/s".format(
             time_elapsed, twist.linear.x, twist.linear.y, twist.angular.z))
 
+        if time_elapsed >= end_time:
+            twist.linear.x = 0.0
+            twist.linear.y = 0.0
+            velocity_publisher.publish(twist)
+            break
         # Sleep to maintain the loop at the desired rate (0.05 seconds)
         rate.sleep()
 
 if __name__ == '__main__':
     try:
-        publish_velocity()
+        publish_velocity(10)
     except rospy.ROSInterruptException:
         pass
 
@@ -42,24 +67,7 @@ if __name__ == '__main__':
 # import numpy as np
 # from geometry_msgs.msg import Twist
 
-# def gammas(degree, dimension, t):
-#         '''method to calculate tube equations'''
-#         C = [0.00416667, 0.5, 0, 0.00416667, 0.48936736, 0.00265816,
-#             0.50833333, 0.5, 0, 0.50833333, 0.51568315, -0.00265816]
-        
-#         vel_tubes = np.zeros(2 * dimension)
-#         for i in range(2 * dimension): #for 4 tube equations
-#             power = 0
-#             for j in range(degree + 1): #each tube eq has {degree+1} terms
-#                 if power > 0:
-#                     vel_tubes[i] += power * ((C[j + i * (degree + 1)]) * (t ** (power - 1)))
-#                 else:
-#                     vel_tubes[i] += 0
-#                 power += 1
-#         gamma1_L, gamma2_L, gamma1_U, gamma2_U = vel_tubes[0], vel_tubes[1], vel_tubes[2], vel_tubes[3]
-#         x_vel = (gamma1_L + gamma1_U)/2
-#         y_vel = (gamma2_L + gamma2_U)/2
-#         return [x_vel, y_vel]
+
 
 # def follow_equation(start_time, end_time):
 #     rospy.init_node('stt_follower', anonymous=True)
