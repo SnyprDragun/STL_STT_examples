@@ -5,10 +5,10 @@ from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 import math
 
-class TurtleBotPositionUpdater:
+class TurtleBotLineFollower:
     def __init__(self):
         # Initialize the ROS node
-        rospy.init_node('turtlebot_position_updater')
+        rospy.init_node('turtlebot_line_follower')
         
         # Publisher to send velocity commands
         self.pub = rospy.Publisher('cmd_vel', Twist, queue_size=10)
@@ -17,8 +17,8 @@ class TurtleBotPositionUpdater:
         self.position = {'x': 0.0, 'y': 0.0, 'theta': 0.0}
         self.sub = rospy.Subscriber('odom', Odometry, self.odom_callback)
         
-        # Timer to call the update_position function every 0.05 seconds
-        rospy.Timer(rospy.Duration(0.05), self.update_position)
+        # Timer to call the control function every 0.1 seconds
+        rospy.Timer(rospy.Duration(0.1), self.control_loop)
         
         # Keep the node running
         rospy.spin()
@@ -48,19 +48,12 @@ class TurtleBotPositionUpdater:
         
         return roll, pitch, yaw
 
-    def update_position(self, event):
-        # Calculate the desired position
-        new_x = self.position['x'] + 0.1
-        new_y = self.position['y'] + 0.1
-
-        # Calculate the distance to move and the angle to turn
-        dx = new_x - self.position['x']
-        dy = new_y - self.position['y']
-        distance = math.sqrt(dx**2 + dy**2)
-        target_angle = math.atan2(dy, dx)
+    def control_loop(self, event):
+        # Calculate the desired heading for the line x = y
+        desired_theta = math.atan2(1.0, 1.0)  # Line x = y has a slope of 1, so theta is 45 degrees (pi/4 radians)
         
         # Compute the angle difference
-        angle_diff = target_angle - self.position['theta']
+        angle_diff = desired_theta - self.position['theta']
         if angle_diff > math.pi:
             angle_diff -= 2 * math.pi
         elif angle_diff < -math.pi:
@@ -68,15 +61,96 @@ class TurtleBotPositionUpdater:
         
         # Create a Twist message to control the TurtleBot
         twist = Twist()
-        twist.linear.x = distance / 0.05  # Speed to cover the distance in 0.05 seconds
-        twist.angular.z = angle_diff / 0.05  # Turn to face the new angle
+        twist.linear.x = 0.1  # Move forward at a constant speed
+        twist.angular.z = angle_diff * 2.0  # Adjust angular velocity based on angle difference
         
         # Publish the velocity command
         self.pub.publish(twist)
-        rospy.loginfo("Moving to new position: x=%f, y=%f", new_x, new_y)
+        rospy.loginfo("Moving along x=y line. Current position: x=%f, y=%f", self.position['x'], self.position['y'])
 
 if __name__ == '__main__':
-    TurtleBotPositionUpdater()
+    TurtleBotLineFollower()
+
+
+# #!/usr/bin/env python3
+
+# import rospy
+# from geometry_msgs.msg import Twist
+# from nav_msgs.msg import Odometry
+# import math
+
+# class TurtleBotPositionUpdater:
+#     def __init__(self):
+#         # Initialize the ROS node
+#         rospy.init_node('turtlebot_position_updater')
+        
+#         # Publisher to send velocity commands
+#         self.pub = rospy.Publisher('cmd_vel', Twist, queue_size=10)
+        
+#         # Subscriber to get the robot's current position
+#         self.position = {'x': 0.0, 'y': 0.0, 'theta': 0.0}
+#         self.sub = rospy.Subscriber('odom', Odometry, self.odom_callback)
+        
+#         # Timer to call the update_position function every 0.05 seconds
+#         rospy.Timer(rospy.Duration(0.05), self.update_position)
+        
+#         # Keep the node running
+#         rospy.spin()
+
+#     def odom_callback(self, msg):
+#         # Update the position and orientation from odometry data
+#         self.position['x'] = msg.pose.pose.position.x
+#         self.position['y'] = msg.pose.pose.position.y
+#         orientation = msg.pose.pose.orientation
+#         _, _, self.position['theta'] = self.quaternion_to_euler(orientation.x, orientation.y, orientation.z, orientation.w)
+
+#     def quaternion_to_euler(self, x, y, z, w):
+#         # Convert quaternion (x, y, z, w) to Euler angles (roll, pitch, yaw)
+#         roll = pitch = yaw = 0
+#         t0 = +2.0 * (w * z + x * y)
+#         t1 = +1.0 - 2.0 * (y * y + z * z)
+#         roll = math.atan2(t0, t1)
+        
+#         t2 = +2.0 * (w * y - z * x)
+#         t2 = +1.0 if t2 > +1.0 else t2
+#         t2 = -1.0 if t2 < -1.0 else t2
+#         pitch = math.asin(t2)
+        
+#         t3 = +2.0 * (w * x + y * z)
+#         t4 = +1.0 - 2.0 * (x * x + y * y)
+#         yaw = math.atan2(t3, t4)
+        
+#         return roll, pitch, yaw
+
+#     def update_position(self, event):
+#         # Calculate the desired position
+#         new_x = self.position['x'] + 0.1
+#         new_y = self.position['y'] + 0.1
+
+#         # Calculate the distance to move and the angle to turn
+#         dx = new_x - self.position['x']
+#         dy = new_y - self.position['y']
+#         distance = math.sqrt(dx**2 + dy**2)
+#         target_angle = math.atan2(dy, dx)
+        
+#         # Compute the angle difference
+#         angle_diff = target_angle - self.position['theta']
+#         if angle_diff > math.pi:
+#             angle_diff -= 2 * math.pi
+#         elif angle_diff < -math.pi:
+#             angle_diff += 2 * math.pi
+        
+#         # Create a Twist message to control the TurtleBot
+#         twist = Twist()
+#         twist.linear.x = distance / 0.05  # Speed to cover the distance in 0.05 seconds
+#         twist.angular.z = angle_diff / 0.05  # Turn to face the new angle
+        
+#         # Publish the velocity command
+#         self.pub.publish(twist)
+#         rospy.loginfo("Moving to new position: x=%f, y=%f", new_x, new_y)
+
+# if __name__ == '__main__':
+#     TurtleBotPositionUpdater()
 
 
 # import rospy
