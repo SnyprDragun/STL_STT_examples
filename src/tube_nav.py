@@ -30,7 +30,7 @@ def follow_equation(start_time, end_time):
     start_time = rospy.Time.now()
 
     while not rospy.is_shutdown():
-        current_time = float(rospy.Time.now() - start_time)
+        current_time = (rospy.Time.now() - start_time).to_sec()
         if current_time % 0.05 == 0:
             x_vel = gammas(2, 2, current_time)[0]
             y_vel = gammas(2, 2, current_time)[1]
