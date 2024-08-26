@@ -46,7 +46,7 @@ class TurtleBot:
         """See video: https://www.youtube.com/watch?v=Qh15Nol5htM."""
         return constant * (self.steering_angle(goal_pose) - self.pose.theta)
 
-    def move2goal(self, x, y):
+    def move2goal(self, x, y, tolerance):
         """Moves the turtle to the goal."""
         goal_pose = Pose()
 
@@ -55,7 +55,7 @@ class TurtleBot:
         goal_pose.y = y
 
         # Please, insert a number slightly greater than 0 (e.g. 0.01).
-        distance_tolerance = input("Set your tolerance: ")
+        distance_tolerance = tolerance
 
         vel_msg = Twist()
 
@@ -91,6 +91,6 @@ class TurtleBot:
 if __name__ == '__main__':
     try:
         bot = TurtleBot()
-        bot.move2goal(5, 5)
+        bot.move2goal(5, 5, 0.01)
     except rospy.ROSInterruptException:
         pass
