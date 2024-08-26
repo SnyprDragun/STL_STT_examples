@@ -27,10 +27,10 @@ def follow_equation(start_time, end_time):
     rospy.init_node('stt_follower', anonymous=True)
     cmd_vel_pub = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
     rate = rospy.Rate(10)
-    start_time = rospy.Time.now().to_sec()
+    start_time = rospy.Time.now()
 
     while not rospy.is_shutdown():
-        current_time = rospy.Time.now().to_sec() - start_time
+        current_time = rospy.Time.now() - start_time
         x_vel = gammas(2, 2, current_time)[0]
         y_vel = gammas(2, 2, current_time)[1]
         vel_msg = Twist()
@@ -41,6 +41,7 @@ def follow_equation(start_time, end_time):
 
         if current_time >= end_time:
             vel_msg.linear.x = 0.0
+            vel_msg.linear.y = 0.0
             cmd_vel_pub.publish(vel_msg)
             break
 
