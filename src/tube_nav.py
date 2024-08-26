@@ -26,24 +26,25 @@ def gammas(degree, dimension, t):
 def follow_equation(start_time, end_time):
     rospy.init_node('stt_follower', anonymous=True)
     cmd_vel_pub = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
-    rate = rospy.Rate(10)
+    rate = rospy.Rate(20)
     start_time = rospy.Time.now()
 
     while not rospy.is_shutdown():
         current_time = rospy.Time.now() - start_time
-        x_vel = gammas(2, 2, current_time)[0]
-        y_vel = gammas(2, 2, current_time)[1]
-        vel_msg = Twist()
-        vel_msg.linear.x = x_vel
-        vel_msg.linear.y = y_vel
-        vel_msg.angular.z = 0.0
-        cmd_vel_pub.publish(vel_msg)
-
-        if current_time >= end_time:
-            vel_msg.linear.x = 0.0
-            vel_msg.linear.y = 0.0
+        if current_time % 0.05 == 0:
+            x_vel = gammas(2, 2, current_time)[0]
+            y_vel = gammas(2, 2, current_time)[1]
+            vel_msg = Twist()
+            vel_msg.linear.x = x_vel
+            vel_msg.linear.y = y_vel
+            vel_msg.angular.z = 0.0
             cmd_vel_pub.publish(vel_msg)
-            break
+
+            if current_time >= end_time:
+                vel_msg.linear.x = 0.0
+                vel_msg.linear.y = 0.0
+                cmd_vel_pub.publish(vel_msg)
+                break
 
         rate.sleep()
 
