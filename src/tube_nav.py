@@ -72,7 +72,7 @@ class TurtleBot:
             # Angular velocity in the z-axis.
             vel_msg.angular.x = 0
             vel_msg.angular.y = 0
-            vel_msg.angular.z = 0.02
+            vel_msg.angular.z = 0.0
 
             # Publishing our vel_msg
             self.velocity_publisher.publish(vel_msg)
