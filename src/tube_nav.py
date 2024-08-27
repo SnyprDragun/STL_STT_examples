@@ -22,14 +22,14 @@ class turtlebot():
         self.pose.x = round(self.pose.x, 4)
         self.pose.y = round(self.pose.y, 4)
 
-    def move2goal(self):
+    def move2goal(self, x, y, tol):
         K1=0.5
         K2=0.5
         goal_pose_ = Odometry()
         goal_pose = goal_pose_.pose.pose.position
-        goal_pose.x = input("Set your x goal:")
-        goal_pose.y = input("Set your y goal:")
-        distance_tolerance = input("Set your tolerance:")
+        goal_pose.x = x
+        goal_pose.y = y
+        distance_tolerance = tol
         vel_msg = Twist()
         r = sqrt(pow((goal_pose.x - self.pose.x), 2) + pow((goal_pose.y - self.pose.y), 2))
         while r >= distance_tolerance:
@@ -53,13 +53,13 @@ class turtlebot():
             self.rate.sleep()
         #Stopping our robot after the movement is over
         vel_msg.linear.x = 0
-        vel_msg.angular.z =0
+        vel_msg.angular.z = 0
         self.velocity_publisher.publish(vel_msg)
 
 if __name__ == '__main__':
    x = turtlebot()
    while 1:
       try:
-        x.move2goal()
+        x.move2goal(5, 5, 0.01)
       except:
         pass
