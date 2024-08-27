@@ -55,7 +55,7 @@ class TurtleBot:
         goal_pose.y = float(input("Set your y goal: "))
 
         # Please, insert a number slightly greater than 0 (e.g. 0.01).
-        distance_tolerance = input("Set your tolerance: ")
+        distance_tolerance = float(input("Set your tolerance: "))
 
         vel_msg = Twist()
 
