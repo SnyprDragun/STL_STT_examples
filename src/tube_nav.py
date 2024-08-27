@@ -10,7 +10,7 @@ class turtlebot():
     def __init__(self):
         #Creating our node,publisher and subscriber
         rospy.init_node('turtlebot_controller', anonymous=True)
-        self.velocity_publisher = rospy.Publisher('/mobile_base/commands/velocity', Twist, queue_size=10)
+        self.velocity_publisher = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
         self.pose_subscriber = rospy.Subscriber('/odom', Odometry, self.callback)
         self.pose = Odometry()
         self.rate = rospy.Rate(10)
