@@ -41,9 +41,9 @@ class turtlebot():
             theta = yaw
             phi = theta - psi
             if phi > np.pi:
-                phi = phi - 2*np.pi
+                phi = phi - np.pi
             if phi < -np.pi:
-                phi = phi + 2*np.pi
+                phi = phi + np.pi
 
             vel_msg.linear.x = K1*r*cos(phi)
             vel_msg.angular.z = -K1*sin(phi)*cos(phi)-(K2*phi)
@@ -53,7 +53,7 @@ class turtlebot():
             self.rate.sleep()
         #Stopping our robot after the movement is over
         vel_msg.linear.x = 0
-        vel_msg.angular.z =0
+        vel_msg.angular.z = 0
         self.velocity_publisher.publish(vel_msg)
 
 if __name__ == '__main__':
