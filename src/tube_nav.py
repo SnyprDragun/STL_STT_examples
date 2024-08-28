@@ -23,8 +23,8 @@ class turtlebot():
         self.pose.y = round(self.pose.y, 4)
 
     def move2goal(self, x, y, tol):
-        K1=0.5
-        K2=0.5
+        K1=0.2
+        K2=0.1
         goal_pose_ = Odometry()
         goal_pose = goal_pose_.pose.pose.position
         goal_pose.x = x
