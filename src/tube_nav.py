@@ -13,7 +13,7 @@ class turtlebot():
         self.velocity_publisher = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
         self.pose_subscriber = rospy.Subscriber('/odom', Odometry, self.callback)
         self.pose = Odometry()
-        self.rate = rospy.Rate(10)
+        self.rate = rospy.Rate(20)
 
     #Callback function implementing the pose value received
     def callback(self, data):
@@ -22,9 +22,9 @@ class turtlebot():
         self.pose.x = round(self.pose.x, 4)
         self.pose.y = round(self.pose.y, 4)
 
-    def move2goal(self, x, y, t, tol):
-        K1=0.4
-        K2=0.1
+    def move2goal(self, x, y, tol):
+        K1 = 0.4
+        K2 = 0.1
         goal_pose_ = Odometry()
         goal_pose = goal_pose_.pose.pose.position
         goal_pose.x = x
