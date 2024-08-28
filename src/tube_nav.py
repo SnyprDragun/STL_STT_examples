@@ -80,8 +80,9 @@ class turtlebot():
 
 
 if __name__ == '__main__':
-   x = turtlebot()
-   while 1:
+    C = [0.00416667, 0.5, 0, 0.00416667, 0.48936736, 0.00265816, 0.50833333, 0.5, 0, 0.50833333, 0.51568315, -0.00265816]
+    x = turtlebot(C, 2)
+    while 1:
       try:
         x.traverse()
       except:
