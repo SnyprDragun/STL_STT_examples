@@ -74,7 +74,7 @@ class turtlebot():
         self.velocity_publisher.publish(vel_msg)
 
     def traverse(self):
-        for time in np.arange(0, 10.5, 0.5):
+        for time in np.arange(0, 6, 1):
             x_target, y_target = self.gamma(time)
             self.move2goal(x_target, y_target)
 
