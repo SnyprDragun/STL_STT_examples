@@ -41,9 +41,9 @@ class turtlebot():
             theta = yaw
             phi = theta - psi
             if phi > np.pi:
-                phi = phi - np.pi
+                phi = phi - 2*np.pi
             if phi < -np.pi:
-                phi = phi + np.pi
+                phi = phi + 2*np.pi
 
             vel_msg.linear.x = K1*r*cos(phi)
             vel_msg.angular.z = -K1*sin(phi)*cos(phi)-(K2*phi)
