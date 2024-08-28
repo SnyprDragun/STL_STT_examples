@@ -40,8 +40,8 @@ class turtlebot():
         return (x_u + x_l)/2, (y_u + y_l)/2
 
     def move2goal(self, x, y):
-        K1 = 0.4
-        K2 = 0.2
+        K1 = 0.8
+        K2 = 0.3
         goal_pose_ = Odometry()
         goal_pose = goal_pose_.pose.pose.position
         goal_pose.x = x
