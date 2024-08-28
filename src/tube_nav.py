@@ -13,7 +13,7 @@ class turtlebot():
         self.velocity_publisher = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
         self.pose_subscriber = rospy.Subscriber('/odom', Odometry, self.callback)
         self.pose = Odometry()
-        self.rate = rospy.Rate(20)
+        self.rate = rospy.Rate(1)
         self.C = C
         self.dimension = 2
         self.degree = degree
