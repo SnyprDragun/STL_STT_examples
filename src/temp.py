@@ -129,3 +129,6 @@ if __name__ == '__main__':
         main()
     except rospy.ROSInterruptException:
         pass
+
+
+##Source: https://github.com/Mohit505Git/Mavros-AUTO.MISSION-mode
