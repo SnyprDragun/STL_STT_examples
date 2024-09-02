@@ -132,3 +132,6 @@ if __name__ == '__main__':
 
 
 ##Source: https://github.com/Mohit505Git/Mavros-AUTO.MISSION-mode
+# latitude: 47.3977417
+# longitude: 8.5455956
+# altitude: 532.8409132385511
