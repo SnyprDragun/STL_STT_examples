@@ -1,5 +1,25 @@
 [
 {
+  "directory": "/home/subho/catkin_w_s/src/dd_stl_stt/build",
+  "command": "/usr/lib/ccache/c++  -DROSCONSOLE_BACKEND_LOG4CXX -DROS_BUILD_SHARED_LIBS=1 -DROS_PACKAGE_NAME=\\\"dd_stl_stt\\\" -I/home/subho/catkin_w_s/src/dd_stl_stt/include/dd_stl_stt -I/home/subho/catkin_w_s/src/dd_stl_stt/include -I/home/subho/catkin_w_s/devel/.private/mavros_msgs/include -I/home/subho/catkin_w_s/src/mavros/mavros_msgs/include -I/opt/ros/noetic/include -I/opt/ros/noetic/share/xmlrpcpp/cmake/../../../include/xmlrpcpp  -g   -o CMakeFiles/root_controller.dir/src/scripts/root_controller.cpp.o -c /home/subho/catkin_w_s/src/dd_stl_stt/src/scripts/root_controller.cpp",
+  "file": "/home/subho/catkin_w_s/src/dd_stl_stt/src/scripts/root_controller.cpp"
+},
+{
+  "directory": "/home/subho/catkin_w_s/src/dd_stl_stt/build",
+  "command": "/usr/lib/ccache/c++  -DROSCONSOLE_BACKEND_LOG4CXX -DROS_BUILD_SHARED_LIBS=1 -DROS_PACKAGE_NAME=\\\"dd_stl_stt\\\" -Ddd_stl_stt_EXPORTS -I/home/subho/catkin_w_s/src/dd_stl_stt/include/dd_stl_stt -I/home/subho/catkin_w_s/src/dd_stl_stt/include -I/home/subho/catkin_w_s/devel/.private/mavros_msgs/include -I/home/subho/catkin_w_s/src/mavros/mavros_msgs/include -I/opt/ros/noetic/include -I/opt/ros/noetic/share/xmlrpcpp/cmake/../../../include/xmlrpcpp  -g -fPIC   -o CMakeFiles/dd_stl_stt.dir/src/scripts/takeoff_node.cpp.o -c /home/subho/catkin_w_s/src/dd_stl_stt/src/scripts/takeoff_node.cpp",
+  "file": "/home/subho/catkin_w_s/src/dd_stl_stt/src/scripts/takeoff_node.cpp"
+},
+{
+  "directory": "/home/subho/catkin_w_s/src/dd_stl_stt/build",
+  "command": "/usr/lib/ccache/c++  -DROSCONSOLE_BACKEND_LOG4CXX -DROS_BUILD_SHARED_LIBS=1 -DROS_PACKAGE_NAME=\\\"dd_stl_stt\\\" -Ddd_stl_stt_EXPORTS -I/home/subho/catkin_w_s/src/dd_stl_stt/include/dd_stl_stt -I/home/subho/catkin_w_s/src/dd_stl_stt/include -I/home/subho/catkin_w_s/devel/.private/mavros_msgs/include -I/home/subho/catkin_w_s/src/mavros/mavros_msgs/include -I/opt/ros/noetic/include -I/opt/ros/noetic/share/xmlrpcpp/cmake/../../../include/xmlrpcpp  -g -fPIC   -o CMakeFiles/dd_stl_stt.dir/src/scripts/offboard_node.cpp.o -c /home/subho/catkin_w_s/src/dd_stl_stt/src/scripts/offboard_node.cpp",
+  "file": "/home/subho/catkin_w_s/src/dd_stl_stt/src/scripts/offboard_node.cpp"
+},
+{
+  "directory": "/home/subho/catkin_w_s/src/dd_stl_stt/build",
+  "command": "/usr/lib/ccache/c++  -DROSCONSOLE_BACKEND_LOG4CXX -DROS_BUILD_SHARED_LIBS=1 -DROS_PACKAGE_NAME=\\\"dd_stl_stt\\\" -Ddd_stl_stt_EXPORTS -I/home/subho/catkin_w_s/src/dd_stl_stt/include/dd_stl_stt -I/home/subho/catkin_w_s/src/dd_stl_stt/include -I/home/subho/catkin_w_s/devel/.private/mavros_msgs/include -I/home/subho/catkin_w_s/src/mavros/mavros_msgs/include -I/opt/ros/noetic/include -I/opt/ros/noetic/share/xmlrpcpp/cmake/../../../include/xmlrpcpp  -g -fPIC   -o CMakeFiles/dd_stl_stt.dir/src/scripts/landing_node.cpp.o -c /home/subho/catkin_w_s/src/dd_stl_stt/src/scripts/landing_node.cpp",
+  "file": "/home/subho/catkin_w_s/src/dd_stl_stt/src/scripts/landing_node.cpp"
+},
+{
   "directory": "/home/subho/catkin_w_s/src/dd_stl_stt/build/gtest/googlemock",
   "command": "/usr/lib/ccache/c++  -DGTEST_CREATE_SHARED_LIBRARY=1 -Dgmock_main_EXPORTS -isystem /usr/src/googletest/googlemock/include -isystem /usr/src/googletest/googlemock -isystem /usr/src/googletest/googletest/include -isystem /usr/src/googletest/googletest  -g -fPIC   -Wall -Wshadow -Wno-error=dangling-else -DGTEST_HAS_PTHREAD=1 -fexceptions -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -DGTEST_HAS_PTHREAD=1 -std=c++11 -o CMakeFiles/gmock_main.dir/src/gmock_main.cc.o -c /usr/src/googletest/googlemock/src/gmock_main.cc",
   "file": "/usr/src/googletest/googlemock/src/gmock_main.cc"

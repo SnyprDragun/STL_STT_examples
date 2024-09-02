@@ -3,6 +3,6 @@ prefix=/usr/local
 Name: dd_stl_stt
 Description: Description of dd_stl_stt
 Version: 0.0.0
-Cflags: 
-Libs: -L${prefix}/lib 
-Requires: 
+Cflags: -I${prefix}/include
+Libs: -L${prefix}/lib -ldd_stl_stt
+Requires: mavros_msgs roscpp rospy std_msgs
