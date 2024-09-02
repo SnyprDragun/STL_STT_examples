@@ -1,4 +1,4 @@
-#include "dd_stl_stt/offboard_node.hpp"
+#include "stl_stt_examples/offboard_node.hpp"
 
 mavros_msgs::State current_state_offboard;
 geometry_msgs::PoseStamped curve;
@@ -238,10 +238,6 @@ void Offboard::follow_stt(){
     std::vector<double> z_u;
     std::vector<double> z_l;
 
-    double waypoint_x;
-    double waypoint_y;
-    double waypoint_z;
-
     for (double time=0; time<61; time+=1){
         x_u.push_back(gamma(time)[0]);
         x_l.push_back(gamma(time)[1]);
@@ -251,42 +247,13 @@ void Offboard::follow_stt(){
         z_l.push_back(gamma(time)[5]);
     }
 
-    geometry_msgs::PoseStamped pose;
-    mavros_msgs::SetMode offb_set_mode;
-    offb_set_mode.request.custom_mode = "OFFBOARD";
-
-    Time last_request = Time::now();
-
-    bool flag = true;
-    while(ok() && flag){
-        if( current_state_offboard.mode != "OFFBOARD" && (Time::now() - last_request > Duration(5.0))){
-            if( set_mode_client.call(offb_set_mode) && offb_set_mode.response.mode_sent){
-                ROS_INFO("Preparing to move...");
-            }
-            last_request = Time::now();
-        }
-        int time = 0;
-        if (time <= 60){
-            pose.pose.position.x = (x_u[time] + x_l[time])/2;
-            pose.pose.position.y = (y_u[time] + y_l[time])/2;
-            pose.pose.position.z = (z_u[time] + z_l[time])/2;
-
-            position_pub.publish(pose);
-
-            ROS_INFO("Here");
-            // offboard((x_u[time] + x_l[time])/2, (y_u[time] + y_l[time])/2, (z_u[time] + z_l[time])/2);
-
-            if (time >= 60){
-                ROS_INFO("Breaking");
-                flag = false;
-                break;
-            }
-            if(pose.pose.position.x == (x_u[time] + x_l[time])/2 && (Time::now() - last_request > Duration(5.0))){
-                time++;
-            }
-        }
-        flag = false;
-        spinOnce(); 
-        rate.sleep();
+    int time = 0;
+    while (time <= 60){
+        offboard((x_u[time] + x_l[time])/2, (y_u[time] + y_l[time])/2, (z_u[time] + z_l[time])/2);
+        ROS_INFO("Here");
+        time++;
     }
+
+    spinOnce(); 
+    rate.sleep();
 }
