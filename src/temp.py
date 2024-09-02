@@ -1,88 +1,131 @@
 #!/usr/bin/env python3
-
+# ROS python API
 import rospy
-from mavros_msgs.srv import WaypointPush, SetMode
-from mavros_msgs.msg import Waypoint
-from geometry_msgs.msg import PoseStamped
-import time
 
-def send_waypoints(waypoint_push_client, waypoints):
-    waypoint_list = []
-    for pose in waypoints:
-        wp = Waypoint()
-        wp.x_lat = pose.pose.position.x
-        wp.y_long = pose.pose.position.y
-        wp.z_alt = pose.pose.position.z
-        wp.frame = Waypoint.FRAME_LOCAL_NED  # Local NED coordinate frame
-        wp.command = 16   # Command to navigate to waypoint
-        wp.is_current = False
-        wp.autocontinue = True
-        waypoint_list.append(wp)
-    
-    try:
-        response = waypoint_push_client(waypoint_list)
-        if response.success:
-            rospy.loginfo("Waypoints sent successfully.")
-        else:
-            rospy.logerr("Failed to send waypoints.")
-    except rospy.ServiceException as e:
-        rospy.logerr("Service call failed: %s", str(e))
+# 3D point & Stamped Pose msgs
+from geometry_msgs.msg import Point, PoseStamped
+# import all mavros messages and services
+from mavros_msgs.msg import *
+from mavros_msgs.srv import *
+
+
+class Modes:
+    def __init__(self):
+        pass
+
+    def setArm(self):
+        rospy.wait_for_service('mavros/cmd/arming')
+        try:
+            armService = rospy.ServiceProxy('mavros/cmd/arming', mavros_msgs.srv.CommandBool)
+            armService(True)
+        except rospy.ServiceException as e:
+            print("Service arming call failed: %s"%e)
+
+    def auto_set_mode(self):
+        rospy.wait_for_service('mavros/set_mode')
+        try:
+            # setModeService = rospy.ServiceProxy('mavros/set_mode', mavros_msgs.srv.set_mode.request.custom_mode)
+            setModeService = rospy.ServiceProxy('mavros/set_mode', mavros_msgs.srv.SetMode)
+            setModeService(custom_mode="AUTO.MISSION")
+        except rospy.ServiceException as e:
+            print ("Service takeoff call failed: %s"%e)
+
+    def wpPush(self,index,wps):
+        rospy.wait_for_service('mavros/mission/push')
+        try:
+            wpPushService = rospy.ServiceProxy('mavros/mission/push', WaypointPush,persistent=True)
+            wpPushService(start_index=0,waypoints=wps)#start_index = the index at which we want the mission to start
+            print ("Waypoint Pushed")
+        except rospy.ServiceException as e:
+            print ("Service takeoff call failed: %s"%e)
+    def wpPull(self,wps):
+        rospy.wait_for_service('mavros/mission/pull')
+        try:
+            wpPullService = rospy.ServiceProxy('mavros/mission/pull', WaypointPull,persistent=True)
+            print (wpPullService().wp_received)
+
+            print ("Waypoint Pulled")
+        except rospy.ServiceException as e:
+            print ("Service Puling call failed: %s"%e)
+
+class stateMoniter:
+    def __init__(self):
+        self.state = State()
+        # Instantiate a setpoints message
+        self.sp = PositionTarget()
+
+        # set the flag to use position setpoints and yaw angle
+        self.sp.type_mask = int('010111111000', 2)
+        
+    def stateCb(self, msg):
+        self.state = msg
+
+class wpMissionCnt:
+
+    def __init__(self):
+        self.wp =Waypoint()
+        
+    def setWaypoints(self,frame,command,is_current,autocontinue,param1,param2,param3,param4,x_lat,y_long,z_alt):
+        self.wp.frame =frame #  FRAME_GLOBAL_REL_ALT = 3 for more visit http://docs.ros.org/api/mavros_msgs/html/msg/Waypoint.html
+        self.wp.command = command #'''VTOL TAKEOFF = 84,NAV_WAYPOINT = 16, TAKE_OFF=22 for checking out other parameters go to https://github.com/mavlink/mavros/blob/master/mavros_msgs/msg/CommandCode.msg'''
+        self.wp.is_current= is_current
+        self.wp.autocontinue = autocontinue # enable taking and following upcoming waypoints automatically 
+        self.wp.param1=param1 # no idea what these are for but the script will work so go ahead
+        self.wp.param2=param2
+        self.wp.param3=param3
+        self.wp.param4=param4
+        self.wp.x_lat= x_lat 
+        self.wp.y_long=y_long
+        self.wp.z_alt= z_alt #relative altitude.
+
+        return self.wp
+
 
 def main():
-    rospy.init_node('waypoint_sender_node')
+    rospy.init_node('waypointMission', anonymous=True)
+    rate = rospy.Rate(20.0)
 
-    # Create service proxies for sending waypoints and setting mode
-    rospy.wait_for_service('/mavros/mission/push')
-    waypoint_push_client = rospy.ServiceProxy('/mavros/mission/push', WaypointPush)
+    stateMt = stateMoniter()
+    md = Modes()
     
-    rospy.wait_for_service('/mavros/set_mode')
-    set_mode_client = rospy.ServiceProxy('/mavros/set_mode', SetMode)
+    wayp0 = wpMissionCnt()
+    wayp1 = wpMissionCnt()
+    wayp2 = wpMissionCnt()
+    wayp3 = wpMissionCnt()
     
-    # Set mode to AUTO.MISSION
-    try:
-        set_mode_response = set_mode_client(custom_mode="AUTO.MISSION")
-        if set_mode_response.mode_sent:
-            rospy.loginfo("Mode set to AUTO.MISSION.")
-        else:
-            rospy.logerr("Failed to set mode.")
-            return
-    except rospy.ServiceException as e:
-        rospy.logerr("Service call failed: %s", str(e))
-        return
+    wps = [] #List to story waypoints
+    
+    w = wayp0.setWaypoints(3,84,True,True,0.0,0.0,0.0,float('nan'),47.397713,8.547605,5)
+    wps.append(w)
 
-    # Define waypoints
-    waypoints = []
+    w = wayp1.setWaypoints(3,16,False,True,0.0,0.0,0.0,float('nan'),47.398621,8.547745,10)
+    wps.append(w)
 
-    # Example waypoints in local NED frame
-    waypoint1 = PoseStamped()
-    waypoint1.pose.position.x = 10.0  # NED North coordinate
-    waypoint1.pose.position.y = 5.0   # NED East coordinate
-    waypoint1.pose.position.z = -10.0 # NED Down coordinate
-    waypoints.append(waypoint1)
+    w = wayp2.setWaypoints(3,16,False,True,0.0,0.0,0.0,float('nan'),47.399151,8.545320,5)
+    wps.append(w)
 
-    waypoint2 = PoseStamped()
-    waypoint2.pose.position.x = 20.0  # NED North coordinate
-    waypoint2.pose.position.y = 10.0  # NED East coordinate
-    waypoint2.pose.position.z = -15.0 # NED Down coordinate
-    waypoints.append(waypoint2)
+    print(wps)
+    md.wpPush(0,wps)
 
-    waypoint3 = PoseStamped()
-    waypoint3.pose.position.x = 30.0  # NED North coordinate
-    waypoint3.pose.position.y = 15.0  # NED East coordinate
-    waypoint3.pose.position.z = -20.0 # NED Down coordinate
-    waypoints.append(waypoint3)
+    for i in range(len(wps)):
+        md.wpPull(i)
+    rospy.Subscriber("/mavros/state",State, stateMt.stateCb)
 
-    # Add more waypoints as needed
-    # Ensure there are 200 waypoints in total
+    # Arming the drone
+    while not stateMt.state.armed:
+        md.setArm()
+        rate.sleep()
+    # Switching the state to auto mode
+    while not stateMt.state.mode=="AUTO.MISSION":
+        md.auto_set_mode()
+        rate.sleep()
+        print("AUTO.MISSION")
 
-    # Send waypoints to the drone
-    send_waypoints(waypoint_push_client, waypoints)
+    # rospy.spin()
 
-    # Wait for each waypoint to be reached
-    for _ in waypoints:
-        time.sleep(1)  # Wait for 1 second before proceeding to the next waypoint
-
-    rospy.spin()  # Keep the node running
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except rospy.ROSInterruptException:
+        pass
