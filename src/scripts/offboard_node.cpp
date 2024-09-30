@@ -127,6 +127,32 @@ void Offboard::panorama(){
     }
 }
 
+
+void Offboard::mission(){
+    Rate rate(20.0);
+
+    geometry_msgs::PoseStamped pose;
+    mavros_msgs::SetMode offb_set_mode;
+    offb_set_mode.request.custom_mode = "AUTO.MISSION";
+
+    Time last_request = Time::now();
+
+    while(ok()){
+        if( current_state_offboard.mode != "AUTO.MISSION" && (Time::now() - last_request > Duration(5.0))){
+            if( set_mode_client.call(offb_set_mode) && offb_set_mode.response.mode_sent){
+                ROS_INFO("Mission mode activated.");
+                Duration(3.0).sleep();
+            }
+            last_request = Time::now();
+        }
+        ROS_INFO("Ping");
+        spinOnce();
+        rate.sleep();
+    }
+}
+
+
+
 // void Offboard::sendWaypoints(const std::vector<geometry_msgs::PoseStamped>& waypoints) {
 //     mavros_msgs::WaypointPush waypoint_push_srv;
     

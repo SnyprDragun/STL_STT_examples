@@ -8,6 +8,63 @@ from geometry_msgs.msg import Point, PoseStamped
 from mavros_msgs.msg import *
 from mavros_msgs.srv import *
 
+import math
+
+def latlon_to_xy(lat, lon):
+    ref_lat = 37.7749
+    ref_lon = -122.4194
+    ref_alt = 0 
+
+    earth_radius = 6371000  
+    d_lat = math.radians(lat - ref_lat)
+    d_lon = math.radians(lon - ref_lon)
+
+    x = earth_radius * d_lon * math.cos(math.radians(ref_lat))
+    y = earth_radius * d_lat
+
+    print(x, y)
+
+def xy_to_latlon(x, y):
+    ref_lat = 47.3977422
+    ref_lon = 8.545593
+
+    earth_radius = 6371000
+
+    d_lat = y/(earth_radius)
+    d_lon = x/(earth_radius * math.cos(math.radians(ref_lat)))
+
+    lat = math.degrees(math.radians(ref_lat) + d_lat)
+    lon = math.degrees(math.radians(ref_lon) + d_lon)
+
+    print(lat, lon)
+    return lat, lon
+
+waypoints_latlon = [
+            [37.7749, -122.4194], 
+            [37.7749, -122.4194],  
+            [37.7759, -122.4184], 
+            [37.7759, -122.4174],  
+            [37.7759, -122.4174] 
+        ]
+
+waypoints_xy = [[0.0              , 0.0               ],
+                [0.0              , 0.0               ],
+                [87.89107614166831, 111.19492664429958],
+                [175.7821522845856, 111.19492664429958],
+                [175.7821522845856, 111.19492664429958]
+            ]
+
+# for i in waypoints_latlon:
+#         latlon_to_xy(i[0], i[1])
+# print('---------------------------------------')
+# for i in waypoints_xy:
+#         xy_to_latlon(i[0], i[1])
+
+# latitude: 47.3977422
+# longitude: 8.545593
+# altitude: 534.719917099309
+
+
 
 class Modes:
     def __init__(self):
@@ -92,23 +149,38 @@ def main():
     wayp1 = wpMissionCnt()
     wayp2 = wpMissionCnt()
     wayp3 = wpMissionCnt()
+    wayp4 = wpMissionCnt()
     
     wps = [] #List to story waypoints
-    
-    w = wayp0.setWaypoints(3,84,True,True,0.0,0.0,0.0,float('nan'),47.397713,8.547605,5)
+
+# ------------------------------------------------------
+
+    w = wayp0.setWaypoints(3,16,True,True,0.0,0.0,0.0,float('nan'),47.3977422, 8.545593,5)
     wps.append(w)
 
-    w = wayp1.setWaypoints(3,16,False,True,0.0,0.0,0.0,float('nan'),47.398621,8.547745,10)
+    w = wayp1.setWaypoints(3,16,False,True,0.0,0.0,0.0,float('nan'),47.39776917964818, 8.54563285736424,5)
     wps.append(w)
 
-    w = wayp2.setWaypoints(3,16,False,True,0.0,0.0,0.0,float('nan'),47.399151,8.545320,5)
+    w = wayp2.setWaypoints(3,16,False,True,0.0,0.0,0.0,float('nan'),47.397760186432116, 8.54564614315232,5)
     wps.append(w)
 
+    w = wayp3.setWaypoints(3,16,False,True,0.0,0.0,0.0,float('nan'),47.3977871660803, 8.5456594289404,5)
+    wps.append(w)
+
+# 47.3977422 8.545593
+# 47.39776917964818 8.54563285736424
+# 47.397760186432116 8.54564614315232
+# 47.3977871660803 8.5456594289404
+
+# -------------------------------------------------------
     print(wps)
     md.wpPush(0,wps)
 
-    for i in range(len(wps)):
-        md.wpPull(i)
+    md.wpPull(wps[0])
+    md.wpPull(wps[1])
+    md.wpPull(wps[2])
+    md.wpPull(wps[3])
+
     rospy.Subscriber("/mavros/state",State, stateMt.stateCb)
 
     # Arming the drone

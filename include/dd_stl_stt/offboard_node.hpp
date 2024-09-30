@@ -37,7 +37,7 @@ class Offboard{
         void offboard(double, double, double);
         void panorama();
         // void sendWaypoints(const std::vector<geometry_msgs::PoseStamped>&);
-        // void mission();
+        void mission();
         std::vector<double> gamma(double);
         void follow_stt();
 };
