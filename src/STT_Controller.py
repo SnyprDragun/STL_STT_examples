@@ -11,17 +11,31 @@ class STT_Controller():
         self.current_state_topic = current_state_topic
         self.vel_pub_topic = vel_pub_topic
 
-        rospy.init_node('STT_Controller')
-        rospy.Subscriber(self.current_state_topic, Odometry, self.state_callback)
-        self.vel_pub = rospy.Publisher(self.vel_pub_topic, Twist, queue_size=10)
-        self.current_state = Odometry()
         self.C = C
         self.degree = degree
         self.dimension = int(len(C) / (2 * (degree + 1)))
         self.start = start
         self.end = end
 
-    def state_callback(self, msg):
+        rospy.init_node('STT_Controller')
+        
+        if self.dimension == 2:
+            rospy.Subscriber(self.current_state_topic, Odometry, self.omnibot_state_callback)
+            self.vel_pub = rospy.Publisher(self.vel_pub_topic, Twist, queue_size=10)
+            self.current_state = Odometry()
+        elif self.degree == 3:
+            rospy.Subscriber(self.current_state_topic, Odometry, self.uav_state_callback)
+            self.vel_pub = rospy.Publisher(self.vel_pub_topic, Twist, queue_size=10)
+            self.current_state = Odometry()
+        else:
+            raise ValueError("degree not according to C")
+        
+
+    def omnibot_state_callback(self, msg):
+        """Callback function for the state subscriber."""
+        self.current_state = msg
+
+    def uav_state_callback(self, msg):
         """Callback function for the state subscriber."""
         self.current_state = msg
 
