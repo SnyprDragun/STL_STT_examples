@@ -37,7 +37,6 @@ class STT_Controller():
             self.offboard_mode_set = False
         else:
             raise ValueError("degree not according to C")
-        
 
     def omnibot_state_callback(self, msg):
         """Callback function for the state subscriber."""
@@ -58,7 +57,7 @@ class STT_Controller():
         C_tensor = torch.tensor(self.C, dtype=torch.float32).view(2 * self.dimension, self.degree + 1)
         real_tubes = torch.matmul(C_tensor, powers_of_t)
         return real_tubes.numpy()
-    
+
     def normalized_error(self, x, gamma_sum, gamma_diff):
         return (2 * x - gamma_sum) / gamma_diff
 
@@ -195,7 +194,7 @@ class STT_Controller():
 
                 rate.sleep()
 
-                
+
 if __name__ == '__main__':
 
     #-----------------------------------------------------------------------------------------#
@@ -218,8 +217,8 @@ if __name__ == '__main__':
     # C14 = 0.46889554184430615
     # C15 = -0.038642267452590924
     C = [C0, C1, C2, C3]#, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15]
-    
-    
+
+
     #-----------------------------------------------------------------------------------------#
     #----------------------------------------- DRONE -----------------------------------------#
     #-----------------------------------------------------------------------------------------#
@@ -248,7 +247,10 @@ if __name__ == '__main__':
     C22 = 0.17267342962280333
     C23 = -0.007911726443198165
     C = [C0, C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15, C16, C17, C18, C19, C20, C21, C22, C23]
-    
+
+
+    #------------------------------------------ RUN ------------------------------------------#
+
     try:
         STT_Controller(C, 3, 0, 15).uav_control()
     except rospy.ROSInterruptException:
