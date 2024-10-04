@@ -112,16 +112,16 @@ class STT_Controller():
 
     def uav_control(self):
         """Calculates the error between the current state and the target."""
-        rate = rospy.Rate(1)
+        rate = rospy.Rate(2)
 
-        k = 5
-        t_values = np.arange(self.start, self.end + 1, 5)
+        k = -1
+        t_values = np.arange(self.start, self.end + 1, 0.5)
 
         while not rospy.is_shutdown() and not self.current_state.armed:
             rospy.loginfo("Waiting for drone to be armed...")
-            time.sleep(1)
+            # time.sleep()
 
-        for _ in range(10):
+        for _ in range(1):
             self.vel_msg.twist.linear.x = 0
             self.vel_msg.twist.linear.y = 0
             self.vel_msg.twist.linear.z = 0
@@ -144,6 +144,7 @@ class STT_Controller():
 
         while not rospy.is_shutdown():
             for t in t_values:
+                # rospy.sleep(0.5)
                 gamma = self.gamma(t)
                 gamma_xl, gamma_yl, gamma_zl, gamma_xu, gamma_yu, gamma_zu = gamma[0], gamma[1], gamma[2], gamma[3], gamma[4], gamma[5]
 
@@ -156,42 +157,42 @@ class STT_Controller():
 
                 e1 = self.normalized_error(self.current_pose.pose.position.x, gamma_sx, gamma_dx)
                 e2 = self.normalized_error(self.current_pose.pose.position.y, gamma_sy, gamma_dy)
-                e3 = self.normalized_error(self.current_pose.pose.position.z, gamma_sz, gamma_dz)
+                e3 = self.normalized_error(self.current_pose.pose.position.z+2, gamma_sz, gamma_dz)
 
                 e_matrix = torch.tensor([e1, e2, e3])
                 print("e_matrix: ", e_matrix)
 
-                epsilon1 = math.log((1 + e1) / (1 - e1))
-                epsilon2 = math.log((1 + e2) / (1 - e2))
-                epsilon3 = math.log((1 + e3) / (1 - e3))
+                try:
+                    epsilon1 = math.log((1 + e1) / (1 - e1))
+                    epsilon2 = math.log((1 + e2) / (1 - e2))
+                    epsilon3 = math.log((1 + e3) / (1 - e3))
 
-                epsilon_matrix = torch.tensor([epsilon1, epsilon2, epsilon3])
-                gamma_d_matrix = torch.diag(torch.tensor([gamma_dx, gamma_dy, gamma_dz]))
-                xi_matrix = 4 * torch.matmul(gamma_d_matrix.inverse(), (torch.eye(self.dimension) - torch.matmul(e_matrix.T, e_matrix)).inverse().to(torch.float64))
-                u_matrix = - k * torch.matmul(xi_matrix, epsilon_matrix.to(torch.float64))
+                    epsilon_matrix = torch.tensor([epsilon1, epsilon2, epsilon3])
+                    gamma_d_matrix = torch.diag(torch.tensor([gamma_dx, gamma_dy, gamma_dz]))
+                    xi_matrix = 4 * torch.matmul(gamma_d_matrix.inverse().to(torch.float64), (torch.eye(self.dimension).to(torch.float64) - torch.matmul(e_matrix.T, e_matrix)).inverse().to(torch.float64))
+                    u_matrix = - k * torch.matmul(xi_matrix, epsilon_matrix.to(torch.float64))
 
-                v_x = u_matrix[0].item()
-                v_y = u_matrix[1].item()
-                v_z = u_matrix[2].item()
+                    v_x = u_matrix[0].item()
+                    v_y = u_matrix[1].item()
+                    v_z = u_matrix[2].item()
 
-                self.vel_msg.angular.z = 0.0
-
-                if -1.5 <= v_x <= 3 and -1.5 <= v_y <= 3 and -1.5 <= v_z <= 3:
+                    # if -1.5 <= v_x <= 3 and -1.5 <= v_y <= 3 and -1.5 <= v_z <= 3:
                     self.vel_msg.twist.linear.x = v_x
                     self.vel_msg.twist.linear.y = v_y
                     self.vel_msg.twist.linear.z = v_z
                     self.vel_pub.publish(self.vel_msg)
-                elif v_x > 3 and v_y > 3 and v_z > 3:
-                    self.vel_msg.twist.linear.x = 3 
-                    self.vel_msg.twist.linear.y = 3
-                    self.vel_msg.twist.linear.z = 3
-                    self.vel_pub.publish(self.vel_msg)
-                else:
-                    self.vel_msg.twist.linear.x = -1.5
-                    self.vel_msg.twist.linear.y = -1.5
-                    self.vel_msg.twist.linear.z = -1.5
-                    self.vel_pub.publish(self.vel_msg)
-
+                    # elif v_x > 3 and v_y > 3 and v_z > 3:
+                    #     self.vel_msg.twist.linear.x = 3 
+                    #     self.vel_msg.twist.linear.y = 3
+                    #     self.vel_msg.twist.linear.z = 3
+                    #     self.vel_pub.publish(self.vel_msg)
+                    # else:
+                    #     self.vel_msg.twist.linear.x = -1.5
+                    #     self.vel_msg.twist.linear.y = -1.5
+                    #     self.vel_msg.twist.linear.z = -1.5
+                    #     self.vel_pub.publish(self.vel_msg)
+                except ValueError:
+                    rospy.INFO("Normalized error out of bounds!")
                 rate.sleep()
 
 
