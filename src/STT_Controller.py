@@ -5,11 +5,13 @@ import rospy
 import numpy as np
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
+from geometry_msgs.msg import Twist, TwistStamped, PoseStamped
+from mavros_msgs.srv import SetMode
+from mavros_msgs.msg import State
+import time
 
 class STT_Controller():
-    def __init__(self, current_state_topic, vel_pub_topic, C, degree, start, end):
-        self.current_state_topic = current_state_topic
-        self.vel_pub_topic = vel_pub_topic
+    def __init__(self, C, degree, start, end):
 
         self.C = C
         self.degree = degree
@@ -20,13 +22,19 @@ class STT_Controller():
         rospy.init_node('STT_Controller')
         
         if self.dimension == 2:
-            rospy.Subscriber(self.current_state_topic, Odometry, self.omnibot_state_callback)
-            self.vel_pub = rospy.Publisher(self.vel_pub_topic, Twist, queue_size=10)
+            self.state_sub = rospy.Subscriber('/odom', Odometry, self.omnibot_state_callback)
+            self.vel_pub = rospy.Publisher('cmd_vel', Twist, queue_size=10)
             self.current_state = Odometry()
-        elif self.degree == 3:
-            rospy.Subscriber(self.current_state_topic, Odometry, self.uav_state_callback)
-            self.vel_pub = rospy.Publisher(self.vel_pub_topic, Twist, queue_size=10)
-            self.current_state = Odometry()
+            self.vel_msg = Twist()
+        elif self.dimension == 3:
+            self.state_sub = rospy.Subscriber('/mavros/state', State, self.uav_state_callback)
+            self.pose_sub = rospy.Subscriber('/mavros/local_position/local', PoseStamped,self.uav_pose_callback)
+            self.vel_pub = rospy.Publisher('/mavros/setpoint_velocity/cmd_vel', TwistStamped, queue_size=10)
+            self.set_mode_srv = rospy.ServiceProxy('/mavros/set_mode', SetMode)
+            self.current_state = State()
+            self.current_pose = PoseStamped()
+            self.vel_msg = TwistStamped()
+            self.offboard_mode_set = False
         else:
             raise ValueError("degree not according to C")
         
@@ -38,6 +46,10 @@ class STT_Controller():
     def uav_state_callback(self, msg):
         """Callback function for the state subscriber."""
         self.current_state = msg
+
+    def uav_pose_callback(self, msg):
+        """Callback function for the pose subscriber."""
+        self.current_pose = msg
 
     def gamma(self, t):
         '''method to calculate tube boundaries at time instance 't' using torch for optimization'''
@@ -51,7 +63,7 @@ class STT_Controller():
         return (2 * x - gamma_sum) / gamma_diff
 
     def omnibot_control(self):
-        """Calculates the error as the difference between the current state and the target."""
+        """Calculates the error between the current state and the target."""
         rate = rospy.Rate(1)
 
         k = 5
@@ -60,97 +72,136 @@ class STT_Controller():
         while not rospy.is_shutdown():
             for t in t_values:
                 gamma = self.gamma(t)
-                if self.dimension == 2:
-                    gamma_xl, gamma_yl, gamma_xu, gamma_yu = gamma[0], gamma[1], gamma[2], gamma[3]
-                    
-                    gamma_sx = gamma_xu + gamma_xl
-                    gamma_dx = gamma_xu - gamma_xl
-                    gamma_sy = gamma_yu + gamma_yl
-                    gamma_dy = gamma_yu - gamma_yl
+                gamma_xl, gamma_yl, gamma_xu, gamma_yu = gamma[0], gamma[1], gamma[2], gamma[3]
+                
+                gamma_sx = gamma_xu + gamma_xl
+                gamma_dx = gamma_xu - gamma_xl
+                gamma_sy = gamma_yu + gamma_yl
+                gamma_dy = gamma_yu - gamma_yl
 
-                    e1 = self.normalized_error(self.current_state.pose.pose.position.x, gamma_sx, gamma_dx)
-                    e2 = self.normalized_error(self.current_state.pose.pose.position.y, gamma_sy, gamma_dy)
+                e1 = self.normalized_error(self.current_state.pose.pose.position.x, gamma_sx, gamma_dx)
+                e2 = self.normalized_error(self.current_state.pose.pose.position.y, gamma_sy, gamma_dy)
 
-                    e_matrix = torch.tensor([e1, e2])
-                    print("e_matrix: ", e_matrix)
+                e_matrix = torch.tensor([e1, e2])
+                print("e_matrix: ", e_matrix)
 
-                    epsilon1 = math.log((1 + e1) / (1 - e1))
-                    epsilon2 = math.log((1 + e2) / (1 - e2))
+                epsilon1 = math.log((1 + e1) / (1 - e1))
+                epsilon2 = math.log((1 + e2) / (1 - e2))
 
-                    epsilon_matrix = torch.tensor([epsilon1, epsilon2])
-                    gamma_d_matrix = torch.diag(torch.tensor([gamma_dx, gamma_dy]))
-                    xi_matrix = 4 * torch.matmul(gamma_d_matrix.inverse(), (torch.eye(self.dimension) - torch.matmul(e_matrix.T, e_matrix)).inverse().to(torch.float64))
-                    u_matrix = - k * torch.matmul(xi_matrix, epsilon_matrix.to(torch.float64))
+                epsilon_matrix = torch.tensor([epsilon1, epsilon2])
+                gamma_d_matrix = torch.diag(torch.tensor([gamma_dx, gamma_dy]))
+                xi_matrix = 4 * torch.matmul(gamma_d_matrix.inverse(), (torch.eye(self.dimension) - torch.matmul(e_matrix.T, e_matrix)).inverse().to(torch.float64))
+                u_matrix = - k * torch.matmul(xi_matrix, epsilon_matrix.to(torch.float64))
 
-                    v_x = u_matrix[0].item()
-                    v_y = u_matrix[1].item()
+                v_x = u_matrix[0].item()
+                v_y = u_matrix[1].item()
 
-                    vel_msg = Twist()
-                    if -0.22 < v_x < 0.22 and -0.22 < v_y < 0.22:
-                        vel_msg.linear.x = v_x
-                        vel_msg.linear.y = v_y
-                        self.vel_pub.publish(vel_msg)
-                    else:
-                        vel_msg.linear.x = 0.22
-                        vel_msg.linear.y = 0.22
-                        self.vel_pub.publish(vel_msg)
+                if -0.22 <= v_x <= 0.22 and -0.22 <= v_y <= 0.22:
+                    self.vel_msg.linear.x = v_x
+                    self.vel_msg.linear.y = v_y
+                    self.vel_pub.publish(self.vel_msg)
+                elif v_x > 0.22 and v_y > 0.22:
+                    self.vel_msg.linear.x = 0.22
+                    self.vel_msg.linear.y = 0.22
+                    self.vel_pub.publish(self.vel_msg)
+                else:
+                    self.vel_msg.linear.x = -0.22
+                    self.vel_msg.linear.y = -0.22
+                    self.vel_pub.publish(self.vel_msg)
 
-                    rate.sleep()
+                rate.sleep()
 
     def uav_control(self):
-        """Calculates the error as the difference between the current state and the target."""
+        """Calculates the error between the current state and the target."""
         rate = rospy.Rate(1)
 
         k = 5
         t_values = np.arange(self.start, self.end + 1, 5)
 
+        while not rospy.is_shutdown() and not self.current_state.armed:
+            rospy.loginfo("Waiting for drone to be armed...")
+            time.sleep(1)
+
+        for _ in range(100):
+            vel_msg = Twist()
+            vel_msg.linear.x = 0
+            vel_msg.linear.y = 0
+            vel_msg.linear.z = 0
+            self.vel_pub.publish(vel_msg)
+            rate.sleep()
+
+        if not self.offboard_mode_set and self.current_state.mode != "OFFBOARD":
+            rospy.wait_for_service('/mavros/set_mode')
+            try:
+                response = self.set_mode_srv(0, 'OFFBOARD')
+                if response.mode_sent:
+                    rospy.loginfo("OFFBOARD mode set successfully.")
+                else:
+                    rospy.logwarn("Failed to set OFFBOARD mode.")
+                self.offboard_mode_set = True
+            except rospy.ServiceException as e:
+                rospy.logerr(f"Service call failed: {e}")
+
+        rospy.loginfo("OFFBOARD mode set. Drone ready for velocity control.")
+
         while not rospy.is_shutdown():
             for t in t_values:
                 gamma = self.gamma(t)
-                if self.dimension == 3:
-                    gamma_xl, gamma_yl, gamma_zl, gamma_xu, gamma_yu, gamma_zu = gamma[0], gamma[1], gamma[2], gamma[3], gamma[4], gamma[5]
+                gamma_xl, gamma_yl, gamma_zl, gamma_xu, gamma_yu, gamma_zu = gamma[0], gamma[1], gamma[2], gamma[3], gamma[4], gamma[5]
 
-                    gamma_sx = gamma_xu + gamma_xl
-                    gamma_dx = gamma_xu - gamma_xl
-                    gamma_sy = gamma_yu + gamma_yl
-                    gamma_dy = gamma_yu - gamma_yl
-                    gamma_sz = gamma_zu + gamma_zl
-                    gamma_dz = gamma_zu - gamma_zl
+                gamma_sx = gamma_xu + gamma_xl
+                gamma_dx = gamma_xu - gamma_xl
+                gamma_sy = gamma_yu + gamma_yl
+                gamma_dy = gamma_yu - gamma_yl
+                gamma_sz = gamma_zu + gamma_zl
+                gamma_dz = gamma_zu - gamma_zl
 
-                    e1 = self.normalized_error(self.current_state.pose.pose.position.x, gamma_sx, gamma_dx)
-                    e2 = self.normalized_error(self.current_state.pose.pose.position.y, gamma_sy, gamma_dy)
-                    e3 = self.normalized_error(self.current_state.pose.pose.position.z, gamma_sz, gamma_dz)
+                e1 = self.normalized_error(self.current_state.pose.pose.position.x, gamma_sx, gamma_dx)
+                e2 = self.normalized_error(self.current_state.pose.pose.position.y, gamma_sy, gamma_dy)
+                e3 = self.normalized_error(self.current_state.pose.pose.position.z, gamma_sz, gamma_dz)
 
-                    e_matrix = torch.tensor([e1, e2, e3])
-                    print("e_matrix: ", e_matrix)
+                e_matrix = torch.tensor([e1, e2, e3])
+                print("e_matrix: ", e_matrix)
 
-                    epsilon1 = math.log((1 + e1) / (1 - e1))
-                    epsilon2 = math.log((1 + e2) / (1 - e2))
-                    epsilon3 = math.log((1 + e3) / (1 - e3))
+                epsilon1 = math.log((1 + e1) / (1 - e1))
+                epsilon2 = math.log((1 + e2) / (1 - e2))
+                epsilon3 = math.log((1 + e3) / (1 - e3))
 
-                    epsilon_matrix = torch.tensor([epsilon1, epsilon2, epsilon3])
-                    gamma_d_matrix = torch.diag(torch.tensor([gamma_dx, gamma_dy, gamma_dz]))
-                    xi_matrix = 4 * torch.matmul(gamma_d_matrix.inverse(), (torch.eye(self.dimension) - torch.matmul(e_matrix.T, e_matrix)).inverse().to(torch.float64))
-                    u_matrix = - k * torch.matmul(xi_matrix, epsilon_matrix.to(torch.float64))
+                epsilon_matrix = torch.tensor([epsilon1, epsilon2, epsilon3])
+                gamma_d_matrix = torch.diag(torch.tensor([gamma_dx, gamma_dy, gamma_dz]))
+                xi_matrix = 4 * torch.matmul(gamma_d_matrix.inverse(), (torch.eye(self.dimension) - torch.matmul(e_matrix.T, e_matrix)).inverse().to(torch.float64))
+                u_matrix = - k * torch.matmul(xi_matrix, epsilon_matrix.to(torch.float64))
 
-                    v_x = u_matrix[0].item()
-                    v_y = u_matrix[1].item()
-                    v_z = u_matrix[2].item()
+                v_x = u_matrix[0].item()
+                v_y = u_matrix[1].item()
+                v_z = u_matrix[2].item()
 
-                    vel_msg = Twist()
-                    if -0.22 < v_x < 0.22 and -0.22 < v_y < 0.22:
-                        vel_msg.linear.x = v_x
-                        vel_msg.linear.y = v_y
-                        self.vel_pub.publish(vel_msg)
-                    else:
-                        vel_msg.linear.x = 0.22
-                        vel_msg.linear.y = 0.22
-                        self.vel_pub.publish(vel_msg)
+                self.vel_msg.angular.z = 0.0
 
-                    rate.sleep()
+                if -1.5 <= v_x <= 3 and -1.5 <= v_y <= 3 and -1.5 <= v_z <= 3:
+                    self.vel_msg.twist.linear.x = v_x
+                    self.vel_msg.twist.linear.y = v_y
+                    self.vel_msg.twist.linear.z = v_z
+                    self.vel_pub.publish(self.vel_msg)
+                elif v_x > 3 and v_y > 3 and v_z > 3:
+                    self.vel_msg.twist.linear.x = 3 
+                    self.vel_msg.twist.linear.y = 3
+                    self.vel_msg.twist.linear.z = 3
+                    self.vel_pub.publish(self.vel_msg)
+                else:
+                    self.vel_msg.twist.linear.x = -1.5
+                    self.vel_msg.twist.linear.y = -1.5
+                    self.vel_msg.twist.linear.z = -1.5
+                    self.vel_pub.publish(self.vel_msg)
+
+                rate.sleep()
 
                 
 if __name__ == '__main__':
+
+    #-----------------------------------------------------------------------------------------#
+    #---------------------------------------- OMNIBOT ----------------------------------------#
+    #-----------------------------------------------------------------------------------------#
     C0 = 0.5#20797808558189697
     C1 = 0.5#16574648035233522
     C2 = -0.5#328330183376585
@@ -168,7 +219,15 @@ if __name__ == '__main__':
     # C14 = 0.46889554184430615
     # C15 = -0.038642267452590924
     C = [C0, C1, C2, C3]#, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15]
+    
+    
+    #-----------------------------------------------------------------------------------------#
+    #----------------------------------------- DRONE -----------------------------------------#
+    #-----------------------------------------------------------------------------------------#
+    
+    
+    
     try:
-        STT_Controller('/odom', '/cmd_vel', C, 0, 0, 30).uav_control()
+        STT_Controller(C, 0, 0, 30).uav_control()
     except rospy.ROSInterruptException:
         print("some error")
