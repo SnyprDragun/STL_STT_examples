@@ -112,14 +112,14 @@ class STT_Controller():
 
     def uav_control(self):
         """Calculates the error between the current state and the target."""
-        rate = rospy.Rate(2)
+        rate = rospy.Rate(100)
 
         k = -1
-        t_values = np.arange(self.start, self.end + 1, 0.5)
+        t_values = np.arange(self.start, self.end + 1, 0.01)
 
         while not rospy.is_shutdown() and not self.current_state.armed:
             rospy.loginfo("Waiting for drone to be armed...")
-            # time.sleep()
+            time.sleep(1)
 
         for _ in range(1):
             self.vel_msg.twist.linear.x = 0
@@ -144,7 +144,7 @@ class STT_Controller():
 
         while not rospy.is_shutdown():
             for t in t_values:
-                # rospy.sleep(0.5)
+                rospy.sleep(0.01)
                 gamma = self.gamma(t)
                 gamma_xl, gamma_yl, gamma_zl, gamma_xu, gamma_yu, gamma_zu = gamma[0], gamma[1], gamma[2], gamma[3], gamma[4], gamma[5]
 
@@ -160,7 +160,7 @@ class STT_Controller():
                 e3 = self.normalized_error(self.current_pose.pose.position.z+2, gamma_sz, gamma_dz)
 
                 e_matrix = torch.tensor([e1, e2, e3])
-                print("e_matrix: ", e_matrix)
+                print("e_matrix: ", e_matrix, "time: ", t)
 
                 try:
                     epsilon1 = math.log((1 + e1) / (1 - e1))
