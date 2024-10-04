@@ -122,12 +122,11 @@ class STT_Controller():
             rospy.loginfo("Waiting for drone to be armed...")
             time.sleep(1)
 
-        for _ in range(100):
-            vel_msg = Twist()
-            vel_msg.linear.x = 0
-            vel_msg.linear.y = 0
-            vel_msg.linear.z = 0
-            self.vel_pub.publish(vel_msg)
+        for _ in range(10):
+            self.vel_msg.twist.linear.x = 0
+            self.vel_msg.twist.linear.y = 0
+            self.vel_msg.twist.linear.z = 0
+            self.vel_pub.publish(self.vel_msg)
             rate.sleep()
 
         if not self.offboard_mode_set and self.current_state.mode != "OFFBOARD":
@@ -156,9 +155,9 @@ class STT_Controller():
                 gamma_sz = gamma_zu + gamma_zl
                 gamma_dz = gamma_zu - gamma_zl
 
-                e1 = self.normalized_error(self.current_state.pose.pose.position.x, gamma_sx, gamma_dx)
-                e2 = self.normalized_error(self.current_state.pose.pose.position.y, gamma_sy, gamma_dy)
-                e3 = self.normalized_error(self.current_state.pose.pose.position.z, gamma_sz, gamma_dz)
+                e1 = self.normalized_error(self.current_pose.pose.position.x, gamma_sx, gamma_dx)
+                e2 = self.normalized_error(self.current_pose.pose.position.y, gamma_sy, gamma_dy)
+                e3 = self.normalized_error(self.current_pose.pose.position.z, gamma_sz, gamma_dz)
 
                 e_matrix = torch.tensor([e1, e2, e3])
                 print("e_matrix: ", e_matrix)
@@ -224,10 +223,33 @@ if __name__ == '__main__':
     #-----------------------------------------------------------------------------------------#
     #----------------------------------------- DRONE -----------------------------------------#
     #-----------------------------------------------------------------------------------------#
-    
-    
+    C0 = -0.6155764940651274
+    C1 = -0.16747256519988604
+    C2 = 0.18354218525309415
+    C3 = -0.007637131069865292
+    C4 = -0.936214597798238
+    C5 = -0.07024607248050078
+    C6 = 0.20316323099379538
+    C7 = -0.009308739106244737
+    C8 = 1.0628853767935942
+    C9 = -0.059703865671985365
+    C10 = 0.17267342962280333
+    C11 = -0.007911726443198165
+    C12 = 1.9422117529674363
+    C13 = -0.16747256519988604
+    C14 = 0.18354218525309415
+    C15 = -0.007637131069865292
+    C16 = 1.6215736492343256
+    C17 = -0.07024607248050078
+    C18 = 0.20316323099379538
+    C19 = -0.009308739106244737
+    C20 = 3.620673623826158
+    C21 = -0.059703865671985365
+    C22 = 0.17267342962280333
+    C23 = -0.007911726443198165
+    C = [C0, C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15, C16, C17, C18, C19, C20, C21, C22, C23]
     
     try:
-        STT_Controller(C, 0, 0, 30).uav_control()
+        STT_Controller(C, 3, 0, 15).uav_control()
     except rospy.ROSInterruptException:
         print("some error")
