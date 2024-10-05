@@ -28,7 +28,7 @@ class STT_Controller():
             self.vel_msg = Twist()
         elif self.dimension == 3:
             self.state_sub = rospy.Subscriber('/mavros/state', State, self.uav_state_callback)
-            self.pose_sub = rospy.Subscriber('/mavros/local_position/local', PoseStamped,self.uav_pose_callback)
+            self.pose_sub = rospy.Subscriber('/mavros/local_position/pose', PoseStamped,self.uav_pose_callback)
             self.vel_pub = rospy.Publisher('/mavros/setpoint_velocity/cmd_vel', TwistStamped, queue_size=10)
             self.set_mode_srv = rospy.ServiceProxy('/mavros/set_mode', SetMode)
             self.current_state = State()
@@ -112,10 +112,10 @@ class STT_Controller():
 
     def uav_control(self):
         """Calculates the error between the current state and the target."""
-        rate = rospy.Rate(100)
+        rate = rospy.Rate(10)
 
-        k = -1
-        t_values = np.arange(self.start, self.end + 1, 0.01)
+        k = 1
+        t_values = np.arange(self.start, self.end + 1, 0.1)
 
         while not rospy.is_shutdown() and not self.current_state.armed:
             rospy.loginfo("Waiting for drone to be armed...")
@@ -144,7 +144,7 @@ class STT_Controller():
 
         while not rospy.is_shutdown():
             for t in t_values:
-                rospy.sleep(0.01)
+                rospy.sleep(0.1)
                 gamma = self.gamma(t)
                 gamma_xl, gamma_yl, gamma_zl, gamma_xu, gamma_yu, gamma_zu = gamma[0], gamma[1], gamma[2], gamma[3], gamma[4], gamma[5]
 
@@ -157,43 +157,49 @@ class STT_Controller():
 
                 e1 = self.normalized_error(self.current_pose.pose.position.x, gamma_sx, gamma_dx)
                 e2 = self.normalized_error(self.current_pose.pose.position.y, gamma_sy, gamma_dy)
-                e3 = self.normalized_error(self.current_pose.pose.position.z+2, gamma_sz, gamma_dz)
-
-                e_matrix = torch.tensor([e1, e2, e3])
-                print("e_matrix: ", e_matrix, "time: ", t)
+                e3 = self.normalized_error(self.current_pose.pose.position.z, gamma_sz, gamma_dz)
 
                 try:
-                    epsilon1 = math.log((1 + e1) / (1 - e1))
-                    epsilon2 = math.log((1 + e2) / (1 - e2))
-                    epsilon3 = math.log((1 + e3) / (1 - e3))
+                    e_matrix = torch.tensor([e1, e2, e3])
+                    print("e_matrix: ", e_matrix, "time: ", t)
+                    print("current pose: ", self.current_pose.pose.position.x, self.current_pose.pose.position.y, self.current_pose.pose.position.z)
+                    print("target pose: ", gamma_sx/2, gamma_sy/2, gamma_sz/2)
+                    print("")
 
-                    epsilon_matrix = torch.tensor([epsilon1, epsilon2, epsilon3])
-                    gamma_d_matrix = torch.diag(torch.tensor([gamma_dx, gamma_dy, gamma_dz]))
-                    xi_matrix = 4 * torch.matmul(gamma_d_matrix.inverse().to(torch.float64), (torch.eye(self.dimension).to(torch.float64) - torch.matmul(e_matrix.T, e_matrix)).inverse().to(torch.float64))
-                    u_matrix = - k * torch.matmul(xi_matrix, epsilon_matrix.to(torch.float64))
+                    #--------------------------- CONTROLLER 1 ---------------------------#
+                    # epsilon1 = math.log((1 + e1) / (1 - e1))
+                    # epsilon2 = math.log((1 + e2) / (1 - e2))
+                    # epsilon3 = math.log((1 + e3) / (1 - e3))
 
-                    v_x = u_matrix[0].item()
-                    v_y = u_matrix[1].item()
-                    v_z = u_matrix[2].item()
+                    # epsilon_matrix = torch.tensor([epsilon1, epsilon2, epsilon3])
 
-                    # if -1.5 <= v_x <= 3 and -1.5 <= v_y <= 3 and -1.5 <= v_z <= 3:
+                    # gamma_d_matrix = torch.diag(torch.tensor([gamma_dx, gamma_dy, gamma_dz]))
+                    # xi_matrix = 4 * torch.matmul(gamma_d_matrix.inverse().to(torch.float64), (torch.eye(self.dimension).to(torch.float64) - torch.matmul(e_matrix.T, e_matrix)).inverse().to(torch.float64))
+                    # u_matrix = torch.matmul(xi_matrix, epsilon_matrix.to(torch.float64))
+
+                    # v_x = 3.245 * u_matrix[0].item()
+                    # v_y = 1.75 * u_matrix[1].item()
+                    # v_z = 0.1 * u_matrix[2].item()
+                    #--------------------------------------------------------------------#
+
+                    #--------------------------- CONTROLLER 2 ---------------------------#
+                    phi_matrix = torch.tanh(k * e_matrix) * (1 - torch.exp(k * e_matrix))
+
+                    v_x = -5 * phi_matrix[0].item()
+                    v_y = -5 * phi_matrix[1].item()
+                    v_z = -5 * phi_matrix[2].item()
+                    #--------------------------------------------------------------------#
+                    
                     self.vel_msg.twist.linear.x = v_x
                     self.vel_msg.twist.linear.y = v_y
                     self.vel_msg.twist.linear.z = v_z
                     self.vel_pub.publish(self.vel_msg)
-                    # elif v_x > 3 and v_y > 3 and v_z > 3:
-                    #     self.vel_msg.twist.linear.x = 3 
-                    #     self.vel_msg.twist.linear.y = 3
-                    #     self.vel_msg.twist.linear.z = 3
-                    #     self.vel_pub.publish(self.vel_msg)
-                    # else:
-                    #     self.vel_msg.twist.linear.x = -1.5
-                    #     self.vel_msg.twist.linear.y = -1.5
-                    #     self.vel_msg.twist.linear.z = -1.5
-                    #     self.vel_pub.publish(self.vel_msg)
+
                 except ValueError:
                     rospy.INFO("Normalized error out of bounds!")
                 rate.sleep()
+
+
 
 
 if __name__ == '__main__':
