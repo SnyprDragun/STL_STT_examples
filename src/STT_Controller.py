@@ -125,7 +125,7 @@ class STT_Controller():
 
         k = 1
         max_vel = 5
-        t_values = np.arange(self.start, self.end + 1, 0.1)
+        t_values = np.arange(self.start, self.end + 0.1, 0.1)
 
         while not rospy.is_shutdown() and not self.current_state.armed:
             rospy.loginfo("Waiting for drone to be armed...")
@@ -207,7 +207,7 @@ class STT_Controller():
 
                     v_x = -max_vel * phi_matrix[0].item()
                     v_y = -max_vel * phi_matrix[1].item()
-                    v_z = -max_vel * phi_matrix[2].item()
+                    v_z = -1.25 * phi_matrix[2].item()
                     self.control_input.append([v_x, v_y, v_z])
                     #--------------------------------------------------------------------#
 
@@ -257,7 +257,7 @@ class STT_Controller():
         return vertices
 
     def plot_cubes(self, upper_list, lower_list, ax):
-        for i in range(len(upper_list)):
+        for i in np.arange(0, len(upper_list), 15):
             upper = upper_list[i]
             lower = lower_list[i]
 
@@ -268,11 +268,11 @@ class STT_Controller():
                     [vertices[j] for j in [0, 1, 5, 4]],  # Front face
                     [vertices[j] for j in [2, 3, 7, 6]],  # Back face
                     [vertices[j] for j in [0, 3, 7, 4]],  # Left face
-                    [vertices[j] for j in [1, 2, 6, 5]]]  # Right face
+                    [vertices[j] for j in [1, 2, 6, 5]]
+                    ]  # Right face
 
             ax.add_collection3d(Poly3DCollection(faces, facecolors='blue', edgecolors='blue', alpha=0.25))
 
-        # Set the labels
         ax.set_xlabel('X')
         ax.set_ylabel('Y')
         ax.set_zlabel('Z')
