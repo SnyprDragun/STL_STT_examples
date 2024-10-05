@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import sys
 import torch
 import math
 import rospy
@@ -9,6 +10,8 @@ from geometry_msgs.msg import Twist, TwistStamped, PoseStamped
 from mavros_msgs.srv import SetMode
 from mavros_msgs.msg import State
 import time
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
 class STT_Controller():
     def __init__(self, C, degree, start, end):
@@ -31,10 +34,16 @@ class STT_Controller():
             self.pose_sub = rospy.Subscriber('/mavros/local_position/pose', PoseStamped,self.uav_pose_callback)
             self.vel_pub = rospy.Publisher('/mavros/setpoint_velocity/cmd_vel', TwistStamped, queue_size=10)
             self.set_mode_srv = rospy.ServiceProxy('/mavros/set_mode', SetMode)
+
             self.current_state = State()
             self.current_pose = PoseStamped()
             self.vel_msg = TwistStamped()
             self.offboard_mode_set = False
+
+            self.gamma_u = []
+            self.gamma_l = []
+            self.trajectory = []
+            self.control_input = []
         else:
             raise ValueError("degree not according to C")
 
@@ -115,6 +124,7 @@ class STT_Controller():
         rate = rospy.Rate(10)
 
         k = 1
+        max_vel = 5
         t_values = np.arange(self.start, self.end + 1, 0.1)
 
         while not rospy.is_shutdown() and not self.current_state.armed:
@@ -140,13 +150,19 @@ class STT_Controller():
             except rospy.ServiceException as e:
                 rospy.logerr(f"Service call failed: {e}")
 
-        rospy.loginfo("OFFBOARD mode set. Drone ready for velocity control.")
+        rospy.loginfo("OFFBOARD mode set. UAV ready for velocity control.")
 
-        while not rospy.is_shutdown():
+        max_iterations = 1
+        count = 0
+        while not rospy.is_shutdown() and count < max_iterations:
+            count += 1
+
             for t in t_values:
                 rospy.sleep(0.1)
                 gamma = self.gamma(t)
                 gamma_xl, gamma_yl, gamma_zl, gamma_xu, gamma_yu, gamma_zu = gamma[0], gamma[1], gamma[2], gamma[3], gamma[4], gamma[5]
+                self.gamma_u.append([gamma_xu, gamma_yu, gamma_zu])
+                self.gamma_l.append([gamma_xl, gamma_yl, gamma_zl])
 
                 gamma_sx = gamma_xu + gamma_xl
                 gamma_dx = gamma_xu - gamma_xl
@@ -155,16 +171,19 @@ class STT_Controller():
                 gamma_sz = gamma_zu + gamma_zl
                 gamma_dz = gamma_zu - gamma_zl
 
+                self.trajectory.append([self.current_pose.pose.position.x, self.current_pose.pose.position.y, self.current_pose.pose.position.z])
+
                 e1 = self.normalized_error(self.current_pose.pose.position.x, gamma_sx, gamma_dx)
                 e2 = self.normalized_error(self.current_pose.pose.position.y, gamma_sy, gamma_dy)
                 e3 = self.normalized_error(self.current_pose.pose.position.z, gamma_sz, gamma_dz)
 
                 try:
+                    print("")
                     e_matrix = torch.tensor([e1, e2, e3])
                     print("e_matrix: ", e_matrix, "time: ", t)
                     print("current pose: ", self.current_pose.pose.position.x, self.current_pose.pose.position.y, self.current_pose.pose.position.z)
                     print("target pose: ", gamma_sx/2, gamma_sy/2, gamma_sz/2)
-                    print("")
+                    print("--------------------------------------------------------------------")
 
                     #--------------------------- CONTROLLER 1 ---------------------------#
                     # epsilon1 = math.log((1 + e1) / (1 - e1))
@@ -180,16 +199,18 @@ class STT_Controller():
                     # v_x = 3.245 * u_matrix[0].item()
                     # v_y = 1.75 * u_matrix[1].item()
                     # v_z = 0.1 * u_matrix[2].item()
+                    # self.control_input.append([v_x, v_y, v_z])
                     #--------------------------------------------------------------------#
 
                     #--------------------------- CONTROLLER 2 ---------------------------#
                     phi_matrix = torch.tanh(k * e_matrix) * (1 - torch.exp(k * e_matrix))
 
-                    v_x = -5 * phi_matrix[0].item()
-                    v_y = -5 * phi_matrix[1].item()
-                    v_z = -5 * phi_matrix[2].item()
+                    v_x = -max_vel * phi_matrix[0].item()
+                    v_y = -max_vel * phi_matrix[1].item()
+                    v_z = -max_vel * phi_matrix[2].item()
+                    self.control_input.append([v_x, v_y, v_z])
                     #--------------------------------------------------------------------#
-                    
+
                     self.vel_msg.twist.linear.x = v_x
                     self.vel_msg.twist.linear.y = v_y
                     self.vel_msg.twist.linear.z = v_z
@@ -197,9 +218,70 @@ class STT_Controller():
 
                 except ValueError:
                     rospy.INFO("Normalized error out of bounds!")
+
                 rate.sleep()
 
+        if not self.offboard_mode_set and self.current_state.mode != "AUTO.LOITER":
+            rospy.wait_for_service('/mavros/set_mode')
+            try:
+                response = self.set_mode_srv(0, 'AUTO.LOITER')
+                if response.mode_sent:
+                    rospy.loginfo("AUTO.LOITER mode set successfully.")
+                else:
+                    rospy.logwarn("Failed to set AUTO.LOITER mode.")
+                self.offboard_mode_set = True
+            except rospy.ServiceException as e:
+                rospy.logerr(f"Service call failed: {e}")
 
+        rospy.loginfo("AUTO.LOITER mode set. UAV on standby.")
+
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+        self.plot_cubes(self.gamma_u, self.gamma_l, ax)
+        self.plot_points(self.trajectory, ax)
+
+        plt.show(block = True)
+        sys.exit(0)
+
+    def create_cube_vertices(self, upper, lower):
+        vertices = [
+            [upper[0], upper[1], upper[2]],
+            [lower[0], upper[1], upper[2]],
+            [lower[0], lower[1], upper[2]],
+            [upper[0], lower[1], upper[2]],
+            [upper[0], upper[1], lower[2]],
+            [lower[0], upper[1], lower[2]],
+            [lower[0], lower[1], lower[2]],
+            [upper[0], lower[1], lower[2]]
+        ]
+        return vertices
+
+    def plot_cubes(self, upper_list, lower_list, ax):
+        for i in range(len(upper_list)):
+            upper = upper_list[i]
+            lower = lower_list[i]
+
+            vertices = self.create_cube_vertices(upper, lower)
+            
+            faces = [[vertices[j] for j in [0, 1, 2, 3]],  # Top face
+                    [vertices[j] for j in [4, 5, 6, 7]],  # Bottom face
+                    [vertices[j] for j in [0, 1, 5, 4]],  # Front face
+                    [vertices[j] for j in [2, 3, 7, 6]],  # Back face
+                    [vertices[j] for j in [0, 3, 7, 4]],  # Left face
+                    [vertices[j] for j in [1, 2, 6, 5]]]  # Right face
+
+            ax.add_collection3d(Poly3DCollection(faces, facecolors='blue', edgecolors='blue', alpha=0.25))
+
+        # Set the labels
+        ax.set_xlabel('X')
+        ax.set_ylabel('Y')
+        ax.set_zlabel('Z')
+
+    def plot_points(self, point_list, ax):
+        x = [point[0] for point in point_list]
+        y = [point[1] for point in point_list]
+        z = [point[2] for point in point_list]
+        ax.scatter(x, y, z, c='green', marker='.', s=50, label='Points')
 
 
 if __name__ == '__main__':
