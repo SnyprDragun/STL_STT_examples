@@ -242,11 +242,11 @@ class STT_Controller():
         ax.set_zlim(0, 15)
         self.plot_cubes(self.gamma_u, self.gamma_l, ax)
         self.plot_points(self.trajectory, ax)
-        self.plot_cuboid(ax, [-1,2], [-1,2], [-1,2], 'green')   # start
-        self.plot_cuboid(ax, [3,6], [6,9], [6,9], 'green')      # block 1
-        self.plot_cuboid(ax, [6,9], [6,9], [0,15], 'red')       # obstacle
-        self.plot_cuboid(ax, [9,12], [6,9], [6,9], 'green')     # block 2
-        self.plot_cuboid(ax, [12,15], [12,15], [12,15], 'green')# end
+        self.plot_cuboid(ax, [-1,2], [-1,2], [1,4], 'green', 'green')       # start
+        self.plot_cuboid(ax, [3,6], [6,9], [6,9], 'green', 'green')         # block 1
+        self.plot_cuboid(ax, [6,9], [6,9], [0,15], 'red', 'red')            # obstacle
+        self.plot_cuboid(ax, [9,12], [6,9], [6,9], 'green', 'green')        # block 2
+        self.plot_cuboid(ax, [12,15], [12,15], [12,15], 'green', 'green')   # end
 
         plt.show(block = True)
         sys.exit(0)
@@ -291,7 +291,7 @@ class STT_Controller():
         z = [point[2] for point in point_list]
         ax.scatter(x, y, z, c='green', marker='.', s=50, label='Points')
 
-    def plot_cuboid(self, ax, x_range, y_range, z_range, color):
+    def plot_cuboid(self, ax, x_range, y_range, z_range, face_color, edge_color):
         vertices = [
             [x_range[1], y_range[1], z_range[1]],  # Top front right
             [x_range[0], y_range[1], z_range[1]],  # Top front left
@@ -310,7 +310,7 @@ class STT_Controller():
                 [vertices[j] for j in [0, 3, 7, 4]],  # Left face
                 [vertices[j] for j in [1, 2, 6, 5]]]  # Right face
 
-        ax.add_collection3d(Poly3DCollection(faces, facecolors=color, linewidths=1, edgecolors='r', alpha=0.25))
+        ax.add_collection3d(Poly3DCollection(faces, facecolors=face_color, linewidths=1, edgecolors=edge_color, alpha=0.25))
 
 if __name__ == '__main__':
 
