@@ -205,8 +205,8 @@ class STT_Controller():
                     #--------------------------- CONTROLLER 2 ---------------------------#
                     phi_matrix = torch.tanh(k * e_matrix) * (1 - torch.exp(k * e_matrix))
 
-                    v_x = -1.3 * phi_matrix[0].item()
-                    v_y = -0.7 * phi_matrix[1].item()
+                    v_x = -1.2 * phi_matrix[0].item()
+                    v_y = -0.75 * phi_matrix[1].item()
                     v_z = -0.8 * phi_matrix[2].item()
                     self.control_input.append([v_x, v_y, v_z])
                     #--------------------------------------------------------------------#
@@ -234,6 +234,8 @@ class STT_Controller():
                 rospy.logerr(f"Service call failed: {e}")
 
         rospy.loginfo("AUTO.LOITER mode set. UAV on standby.")
+
+        # print(self.trajectory)
 
         fig = plt.figure(figsize = (8,8))
         ax = fig.add_subplot(111, projection='3d')
@@ -279,7 +281,7 @@ class STT_Controller():
                     [vertices[j] for j in [1, 2, 6, 5]]
                     ]  # Right face
 
-            ax.add_collection3d(Poly3DCollection(faces, facecolors='blue', edgecolors='blue', alpha=0.25))
+            ax.add_collection3d(Poly3DCollection(faces, facecolors='blue', edgecolors='blue', alpha=0.1))
 
         ax.set_xlabel('X')
         ax.set_ylabel('Y')
@@ -289,7 +291,7 @@ class STT_Controller():
         x = [point[0] for point in point_list]
         y = [point[1] for point in point_list]
         z = [point[2] for point in point_list]
-        ax.scatter(x, y, z, c='green', marker='.', s=50, label='Points')
+        ax.scatter(x, y, z, c='black', marker='.', s=50, label='Points')
 
     def plot_cuboid(self, ax, x_range, y_range, z_range, face_color, edge_color):
         vertices = [
@@ -448,6 +450,6 @@ if __name__ == '__main__':
     #------------------------------------------ RUN ------------------------------------------#
 
     try:
-        STT_Controller(C, 3, 0, 15).uav_control()
+        STT_Controller(C, 3, 0, 20).uav_control()
     except rospy.ROSInterruptException:
         print("some error")
