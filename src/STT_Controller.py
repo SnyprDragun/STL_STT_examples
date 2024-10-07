@@ -11,6 +11,7 @@ from mavros_msgs.srv import SetMode
 from mavros_msgs.msg import State
 import time
 import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
 class STT_Controller():
@@ -21,6 +22,10 @@ class STT_Controller():
         self.degree = int((len(C) / (2 * self.dimension)) - 1)
         self.start = start
         self.end = end
+        self.range = int((self.end - self.start)/0.1)
+
+        self.setpoints = [[-1, 2, -1, 2, 1, 4, 0, 1], [3, 6, 6, 9, 6, 9, 7, 8], [9, 12, 6, 9, 6, 9, 7, 8], [12, 15, 12, 15, 12, 15, 14, 15]]
+        self.obstacles = [[6, 9, 6, 9, 0, 15, 0, 15]]
 
         rospy.init_node('STT_Controller')
         
@@ -125,7 +130,7 @@ class STT_Controller():
 
         k = 1
         max_vel = 5
-        t_values = np.arange(self.start, self.end + 0.5, 0.1)
+        t_values = np.arange(self.start, self.end + 0.1, 0.1)
 
         while not rospy.is_shutdown() and not self.current_state.armed:
             rospy.loginfo("Waiting for drone to be armed...")
@@ -237,82 +242,114 @@ class STT_Controller():
 
         # print(self.trajectory)
 
-        fig = plt.figure(figsize = (8,8))
-        ax = fig.add_subplot(111, projection='3d')
-        ax.set_xlim(0, 15)
-        ax.set_ylim(0, 15)
-        ax.set_zlim(0, 15)
-        self.plot_cubes(self.gamma_u, self.gamma_l, ax)
-        self.plot_points(self.trajectory, ax)
-        self.plot_cuboid(ax, [-1,2], [-1,2], [1,4], 'green', 'green')       # start
-        self.plot_cuboid(ax, [3,6], [6,9], [6,9], 'green', 'green')         # block 1
-        self.plot_cuboid(ax, [6,9], [6,9], [0,15], 'red', 'red')            # obstacle
-        self.plot_cuboid(ax, [9,12], [6,9], [6,9], 'green', 'green')        # block 2
-        self.plot_cuboid(ax, [12,15], [12,15], [12,15], 'green', 'green')   # end
+        self.plot_for_3D()
 
         plt.show(block = True)
         sys.exit(0)
 
-    def create_cube_vertices(self, upper, lower):
-        vertices = [
-            [upper[0], upper[1], upper[2]],
-            [lower[0], upper[1], upper[2]],
-            [lower[0], lower[1], upper[2]],
-            [upper[0], lower[1], upper[2]],
-            [upper[0], upper[1], lower[2]],
-            [lower[0], upper[1], lower[2]],
-            [lower[0], lower[1], lower[2]],
-            [upper[0], lower[1], lower[2]]
-        ]
-        return vertices
+    def faces(self, i):
+        vertices = [[i[0], i[2], i[4]], [i[1], i[2], i[4]], [i[1], i[3], i[4]], [i[0], i[3], i[4]],  # Bottom face
+                    [i[0], i[2], i[5]], [i[1], i[2], i[5]], [i[1], i[3], i[5]], [i[0], i[3], i[5]]]   # Top face
 
-    def plot_cubes(self, upper_list, lower_list, ax):
-        for i in np.arange(0, len(upper_list), 15):
-            upper = upper_list[i]
-            lower = lower_list[i]
+        # Define the 6 faces of the cube using the vertices
+        faces = [   [vertices[0], vertices[1], vertices[2], vertices[3]],  # Bottom face
+                    [vertices[4], vertices[5], vertices[6], vertices[7]],  # Top face
+                    [vertices[0], vertices[1], vertices[5], vertices[4]],  # Front face
+                    [vertices[2], vertices[3], vertices[7], vertices[6]],  # Back face
+                    [vertices[1], vertices[2], vertices[6], vertices[5]],  # Right face
+                    [vertices[0], vertices[3], vertices[7], vertices[4]]]  # Left face
+        return faces
 
-            vertices = self.create_cube_vertices(upper, lower)
-            
-            faces = [[vertices[j] for j in [0, 1, 2, 3]],  # Top face
-                    [vertices[j] for j in [4, 5, 6, 7]],  # Bottom face
-                    [vertices[j] for j in [0, 1, 5, 4]],  # Front face
-                    [vertices[j] for j in [2, 3, 7, 6]],  # Back face
-                    [vertices[j] for j in [0, 3, 7, 4]],  # Left face
-                    [vertices[j] for j in [1, 2, 6, 5]]
-                    ]  # Right face
+    def plot_for_3D(self):
+        x_u = np.zeros(self.range)
+        x_l = np.zeros(self.range)
+        y_u = np.zeros(self.range)
+        y_l = np.zeros(self.range)
+        z_u = np.zeros(self.range)
+        z_l = np.zeros(self.range)
 
-            ax.add_collection3d(Poly3DCollection(faces, facecolors='blue', edgecolors='blue', alpha=0.1))
+        for i in range(self.range):
+            x_u[i] = self.gamma(i * 0.1)[3]
+            x_l[i] = self.gamma(i * 0.1)[0]
+            y_u[i] = self.gamma(i * 0.1)[4]
+            y_l[i] = self.gamma(i * 0.1)[1]
+            z_u[i] = self.gamma(i * 0.1)[5]
+            z_l[i] = self.gamma(i * 0.1)[2]
 
-        ax.set_xlabel('X')
-        ax.set_ylabel('Y')
-        ax.set_zlabel('Z')
+        fig1, axs = plt.subplots(3, 1, figsize=(8, 8), constrained_layout=True)
+        ax, bx, cx = axs
+        for i in self.setpoints:        # t1  x1/y1/z1  t2    t1  x2/y2/z2  x1
+            square_x = patches.Rectangle((i[6], i[0]), i[7] - i[6], i[1] - i[0], edgecolor='green', facecolor='none')
+            square_y = patches.Rectangle((i[6], i[2]), i[7] - i[6], i[3] - i[2], edgecolor='green', facecolor='none')
+            square_z = patches.Rectangle((i[6], i[4]), i[7] - i[6], i[5] - i[4], edgecolor='green', facecolor='none')
+            ax.add_patch(square_x)
+            bx.add_patch(square_y)
+            cx.add_patch(square_z)
 
-    def plot_points(self, point_list, ax):
-        x = [point[0] for point in point_list]
-        y = [point[1] for point in point_list]
-        z = [point[2] for point in point_list]
-        ax.scatter(x, y, z, c='black', marker='.', s=50, label='Points')
+        for i in self.obstacles:        # t1  x1/y1/z1  t2    t1  x2/y2/z2  x1
+            square_x = patches.Rectangle((i[6], i[0]), i[7] - i[6], i[1] - i[0], edgecolor='red', facecolor='none')
+            square_y = patches.Rectangle((i[6], i[2]), i[7] - i[6], i[3] - i[2], edgecolor='red', facecolor='none')
+            square_z = patches.Rectangle((i[6], i[4]), i[7] - i[6], i[5] - i[4], edgecolor='red', facecolor='none')
+            ax.add_patch(square_x)
+            bx.add_patch(square_y)
+            cx.add_patch(square_z)
 
-    def plot_cuboid(self, ax, x_range, y_range, z_range, face_color, edge_color):
-        vertices = [
-            [x_range[1], y_range[1], z_range[1]],  # Top front right
-            [x_range[0], y_range[1], z_range[1]],  # Top front left
-            [x_range[0], y_range[0], z_range[1]],  # Top back left
-            [x_range[1], y_range[0], z_range[1]],  # Top back right
-            [x_range[1], y_range[1], z_range[0]],  # Bottom front right
-            [x_range[0], y_range[1], z_range[0]],  # Bottom front left
-            [x_range[0], y_range[0], z_range[0]],  # Bottom back left
-            [x_range[1], y_range[0], z_range[0]]   # Bottom back right
-        ]
+        t = np.linspace(self.start, self.end, self.range)
+        
+        xt = [sublist[0] for sublist in self.trajectory]
+        yt = [sublist[1] for sublist in self.trajectory]
+        zt = [sublist[2] for sublist in self.trajectory]
 
-        faces = [[vertices[j] for j in [0, 1, 2, 3]],  # Top face
-                [vertices[j] for j in [4, 5, 6, 7]],  # Bottom face
-                [vertices[j] for j in [0, 1, 5, 4]],  # Front face
-                [vertices[j] for j in [2, 3, 7, 6]],  # Back face
-                [vertices[j] for j in [0, 3, 7, 4]],  # Left face
-                [vertices[j] for j in [1, 2, 6, 5]]]  # Right face
+        ax.plot(t, x_u)
+        ax.plot(t, xt[:-1])
+        ax.plot(t, x_l)
 
-        ax.add_collection3d(Poly3DCollection(faces, facecolors=face_color, linewidths=1, edgecolors=edge_color, alpha=0.25))
+        bx.plot(t, y_u)
+        bx.plot(t, yt[:-1])
+        bx.plot(t, y_l)
+
+        cx.plot(t, z_u)
+        cx.plot(t, zt[:-1])
+        cx.plot(t, z_l)
+
+        ax.set_title("t vs x")
+        bx.set_title("t vs y")
+        cx.set_title("t vs z")
+
+        # --------------------------------------------------- 3D PLOT {X vs Y vs Z} --------------------------------------------------- #
+        fig2 = plt.figure(2, figsize = (10, 8))
+        dx = fig2.add_subplot(111, projection='3d')
+        dx.set_xlim(0, 15) ## dx.set_xlim(self.get_x_start(), self.get_x_finish())
+        dx.set_ylim(0, 15) ## dx.set_ylim(self.get_y_start(), self.get_y_finish())
+        dx.set_zlim(0, 15) ## dx.set_zlim(self.getStart(), self.getFinish())
+        dx.set_xlabel('X Axis')
+        dx.set_ylabel('Y Axis')
+        dx.set_zlabel('Z Axis')
+
+        for i in np.arange(0, self.range, 10):
+            vertices = [[x_u[i], y_u[i], z_u[i]], [x_l[i], y_u[i], z_u[i]], [x_l[i], y_l[i], z_u[i]], [x_u[i], y_l[i], z_u[i]],
+                        [x_u[i], y_u[i], z_l[i]], [x_l[i], y_u[i], z_l[i]], [x_l[i], y_l[i], z_l[i]], [x_u[i], y_l[i], z_l[i]]]
+
+            faces = [   [vertices[0], vertices[1], vertices[2], vertices[3]],  # Bottom face
+                        [vertices[4], vertices[5], vertices[6], vertices[7]],  # Top face
+                        [vertices[0], vertices[1], vertices[5], vertices[4]],  # Front face
+                        [vertices[2], vertices[3], vertices[7], vertices[6]],  # Back face
+                        [vertices[1], vertices[2], vertices[6], vertices[5]],  # Right face
+                        [vertices[0], vertices[3], vertices[7], vertices[4]]]  # Left face
+
+            dx.add_collection3d(Poly3DCollection(faces, facecolors='blue', alpha=0.09))
+
+        x = [point[0] for point in self.trajectory]
+        y = [point[1] for point in self.trajectory]
+        z = [point[2] for point in self.trajectory]
+        dx.scatter(x, y, z, c='black', marker='.', s=50, label='Points')
+
+        for i in self.obstacles:
+            dx.add_collection3d(Poly3DCollection(self.faces(i), facecolors='red', edgecolors='r', alpha=0.25))
+
+        for i in self.setpoints:
+            dx.add_collection3d(Poly3DCollection(self.faces(i), facecolors='green', edgecolors='green', alpha=0.25))
+
 
 if __name__ == '__main__':
 
@@ -450,6 +487,6 @@ if __name__ == '__main__':
     #------------------------------------------ RUN ------------------------------------------#
 
     try:
-        STT_Controller(C, 3, 0, 20).uav_control()
+        STT_Controller(C, 3, 0, 15).uav_control()
     except rospy.ROSInterruptException:
         print("some error")
