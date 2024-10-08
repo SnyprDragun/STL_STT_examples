@@ -22,7 +22,8 @@ class STT_Controller():
         self.degree = int((len(C) / (2 * self.dimension)) - 1)
         self.start = start
         self.end = end
-        self.range = int((self.end - self.start)/0.1)
+        self.step = 0.005
+        self.range = int((self.end - self.start)/self.step)
 
         self.setpoints = [[-1, 2, -1, 2, 1, 4, 0, 1], [3, 6, 6, 9, 6, 9, 7, 8], [9, 12, 6, 9, 6, 9, 7, 8], [12, 15, 12, 15, 12, 15, 14, 15]]
         self.obstacles = [[6, 9, 6, 9, 0, 15, 0, 15]]
@@ -126,11 +127,15 @@ class STT_Controller():
 
     def uav_control(self):
         """Calculates the error between the current state and the target."""
-        rate = rospy.Rate(10)
+        rate = rospy.Rate(200)
 
         k = 1
+        # kx = 1.03
+        # ky = 1
+        # kz = 1
+        # k = torch.diag(torch.tensor([kx, ky, kz]))
         max_vel = 5
-        t_values = np.arange(self.start, self.end + 0.1, 0.1)
+        t_values = np.arange(self.start, self.end + self.step, self.step)
 
         while not rospy.is_shutdown() and not self.current_state.armed:
             rospy.loginfo("Waiting for drone to be armed...")
@@ -163,7 +168,7 @@ class STT_Controller():
             count += 1
 
             for t in t_values:
-                rospy.sleep(0.1)
+                rospy.sleep(self.step)
                 gamma = self.gamma(t)
                 gamma_xl, gamma_yl, gamma_zl, gamma_xu, gamma_yu, gamma_zu = gamma[0], gamma[1], gamma[2], gamma[3], gamma[4], gamma[5]
                 self.gamma_u.append([gamma_xu, gamma_yu, gamma_zu])
@@ -208,11 +213,12 @@ class STT_Controller():
                     #--------------------------------------------------------------------#
 
                     #--------------------------- CONTROLLER 2 ---------------------------#
+                    # phi_matrix = torch.tanh(torch.matmul(k.to(torch.float32), e_matrix.to(torch.float32))) * (1 - torch.exp(torch.matmul(k.to(torch.float32), e_matrix.to(torch.float32))))
                     phi_matrix = torch.tanh(k * e_matrix) * (1 - torch.exp(k * e_matrix))
 
-                    v_x = -1.2 * phi_matrix[0].item()
-                    v_y = -0.75 * phi_matrix[1].item()
-                    v_z = -0.8 * phi_matrix[2].item()
+                    v_x = -1 * phi_matrix[0].item()
+                    v_y = -1.6 * phi_matrix[1].item()
+                    v_z = -1.3 * phi_matrix[2].item()
                     self.control_input.append([v_x, v_y, v_z])
                     #--------------------------------------------------------------------#
 
@@ -269,12 +275,12 @@ class STT_Controller():
         z_l = np.zeros(self.range)
 
         for i in range(self.range):
-            x_u[i] = self.gamma(i * 0.1)[3]
-            x_l[i] = self.gamma(i * 0.1)[0]
-            y_u[i] = self.gamma(i * 0.1)[4]
-            y_l[i] = self.gamma(i * 0.1)[1]
-            z_u[i] = self.gamma(i * 0.1)[5]
-            z_l[i] = self.gamma(i * 0.1)[2]
+            x_u[i] = self.gamma(i * self.step)[3]
+            x_l[i] = self.gamma(i * self.step)[0]
+            y_u[i] = self.gamma(i * self.step)[4]
+            y_l[i] = self.gamma(i * self.step)[1]
+            z_u[i] = self.gamma(i * self.step)[5]
+            z_l[i] = self.gamma(i * self.step)[2]
 
         fig1, axs = plt.subplots(3, 1, figsize=(8, 8), constrained_layout=True)
         ax, bx, cx = axs
@@ -301,15 +307,27 @@ class STT_Controller():
         zt = [sublist[2] for sublist in self.trajectory]
 
         ax.plot(t, x_u)
-        ax.plot(t, xt[:-1])
+        for i in range(len(t) - 1):
+            if x_l[i] < xt[i] < x_u[i]:
+                ax.plot(t[i:i+2], xt[i:i+2], color='green')
+            else:
+                ax.plot(t[i:i+2], xt[i:i+2], color='red')
         ax.plot(t, x_l)
 
         bx.plot(t, y_u)
-        bx.plot(t, yt[:-1])
+        for i in range(len(t) - 1):
+            if y_l[i] < yt[i] < y_u[i]:
+                bx.plot(t[i:i+2], yt[i:i+2], color='green')
+            else:
+                bx.plot(t[i:i+2], yt[i:i+2], color='red')
         bx.plot(t, y_l)
 
         cx.plot(t, z_u)
-        cx.plot(t, zt[:-1])
+        for i in range(len(t) - 1):
+            if z_l[i] < zt[i] < z_u[i]:
+                cx.plot(t[i:i+2], zt[i:i+2], color='green')
+            else:
+                cx.plot(t[i:i+2], zt[i:i+2], color='red')
         cx.plot(t, z_l)
 
         ax.set_title("t vs x")
@@ -326,7 +344,7 @@ class STT_Controller():
         dx.set_ylabel('Y Axis')
         dx.set_zlabel('Z Axis')
 
-        for i in np.arange(0, self.range, 10):
+        for i in np.arange(0, self.range, 200):
             vertices = [[x_u[i], y_u[i], z_u[i]], [x_l[i], y_u[i], z_u[i]], [x_l[i], y_l[i], z_u[i]], [x_u[i], y_l[i], z_u[i]],
                         [x_u[i], y_u[i], z_l[i]], [x_l[i], y_u[i], z_l[i]], [x_l[i], y_l[i], z_l[i]], [x_u[i], y_l[i], z_l[i]]]
 
@@ -342,7 +360,12 @@ class STT_Controller():
         x = [point[0] for point in self.trajectory]
         y = [point[1] for point in self.trajectory]
         z = [point[2] for point in self.trajectory]
-        dx.scatter(x, y, z, c='black', marker='.', s=50, label='Points')
+        for i in np.arange(0, self.range, 50):
+            if (x_l[i] < x[i] < x_u[i]) and (y_l[i] < y[i] < y_u[i]) and (z_l[i] < z[i] < z_u[i]):
+                dx.scatter(x[i:i+2], y[i:i+2], z[i:i+2], c='black', marker='.', s=50, label='Points')
+            else:
+                dx.scatter(x[i:i+2], y[i:i+2], z[i:i+2], c='red', marker='.', s=50, label='Points')
+        # dx.scatter(x, y, z, c='black', marker='.', s=50, label='Points')
 
         for i in self.obstacles:
             dx.add_collection3d(Poly3DCollection(self.faces(i), facecolors='red', edgecolors='r', alpha=0.25))
