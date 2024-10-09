@@ -22,7 +22,7 @@ class STT_Controller():
         self.degree = int((len(C) / (2 * self.dimension)) - 1)
         self.start = start
         self.end = end
-        self.step = 0.005
+        self.step = 0.002
         self.range = int((self.end - self.start)/self.step)
 
         self.setpoints = [[-1, 2, -1, 2, 1, 4, 0, 1], [3, 6, 6, 9, 6, 9, 7, 8], [9, 12, 6, 9, 6, 9, 7, 8], [12, 15, 12, 15, 12, 15, 14, 15]]
@@ -127,13 +127,8 @@ class STT_Controller():
 
     def uav_control(self):
         """Calculates the error between the current state and the target."""
-        rate = rospy.Rate(200)
+        rate = rospy.Rate(500)
 
-        k = 1
-        # kx = 1.03
-        # ky = 1
-        # kz = 1
-        # k = torch.diag(torch.tensor([kx, ky, kz]))
         max_vel = 5
         t_values = np.arange(self.start, self.end + self.step, self.step)
 
@@ -196,6 +191,7 @@ class STT_Controller():
                     print("--------------------------------------------------------------------")
 
                     #--------------------------- CONTROLLER 1 ---------------------------#
+                    # k = 1
                     # epsilon1 = math.log((1 + e1) / (1 - e1))
                     # epsilon2 = math.log((1 + e2) / (1 - e2))
                     # epsilon3 = math.log((1 + e3) / (1 - e3))
@@ -213,12 +209,16 @@ class STT_Controller():
                     #--------------------------------------------------------------------#
 
                     #--------------------------- CONTROLLER 2 ---------------------------#
-                    # phi_matrix = torch.tanh(torch.matmul(k.to(torch.float32), e_matrix.to(torch.float32))) * (1 - torch.exp(torch.matmul(k.to(torch.float32), e_matrix.to(torch.float32))))
-                    phi_matrix = torch.tanh(k * e_matrix) * (1 - torch.exp(k * e_matrix))
+                    kx = 7
+                    ky = 3
+                    kz = 3
+
+                    k = torch.diag(torch.tensor([kx, ky, kz]))
+                    phi_matrix = torch.tanh(torch.matmul(k.to(torch.float32), e_matrix.to(torch.float32))) * (1 - torch.exp(- torch.pow(torch.matmul(k.to(torch.float32), e_matrix.to(torch.float32)), 2)))
 
                     v_x = -1 * phi_matrix[0].item()
-                    v_y = -1.6 * phi_matrix[1].item()
-                    v_z = -1.3 * phi_matrix[2].item()
+                    v_y = -1 * phi_matrix[1].item()
+                    v_z = -1 * phi_matrix[2].item()
                     self.control_input.append([v_x, v_y, v_z])
                     #--------------------------------------------------------------------#
 
@@ -344,7 +344,7 @@ class STT_Controller():
         dx.set_ylabel('Y Axis')
         dx.set_zlabel('Z Axis')
 
-        for i in np.arange(0, self.range, 200):
+        for i in np.arange(0, self.range, 500):
             vertices = [[x_u[i], y_u[i], z_u[i]], [x_l[i], y_u[i], z_u[i]], [x_l[i], y_l[i], z_u[i]], [x_u[i], y_l[i], z_u[i]],
                         [x_u[i], y_u[i], z_l[i]], [x_l[i], y_u[i], z_l[i]], [x_l[i], y_l[i], z_l[i]], [x_u[i], y_l[i], z_l[i]]]
 
