@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 import sys
+import re
+import subprocess
 import torch
-import math
 import rospy
 import numpy as np
 from geometry_msgs.msg import Twist
@@ -225,7 +226,7 @@ class STT_Controller():
                 kx = 7
                 ky = 3
                 kz = 3
-                max_vel = 1
+                max_vel = 2
 
                 k = torch.diag(torch.tensor([kx, ky, kz]))
                 phi_matrix = torch.tanh(torch.matmul(k.to(torch.float32), e_matrix.to(torch.float32))) * (1 - torch.exp(- torch.pow(torch.matmul(k.to(torch.float32), e_matrix.to(torch.float32)), 2)))
@@ -260,6 +261,7 @@ class STT_Controller():
         # print(self.trajectory)
 
         self.plot_for_3D()
+        self.store_trajectory()
 
         plt.show(block = True)
         sys.exit(0)
@@ -384,6 +386,13 @@ class STT_Controller():
         for i in self.setpoints:
             dx.add_collection3d(Poly3DCollection(self.faces(i), facecolors='green', edgecolors='green', alpha=0.25))
 
+    def store_trajectory(self):
+        file_name = 'trajetory_first_block.py'
+        # file_name = 'trajetory_second_block.py'
+        content = "[" + ',\n '.join(map(str, self.trajectory)) + "]"
+        with open(file_name, 'w') as f:
+            f.write(content)
+
 
 if __name__ == '__main__':
 
@@ -412,31 +421,6 @@ if __name__ == '__main__':
     #-----------------------------------------------------------------------------------------#
     #----------------------------------------- DRONE -----------------------------------------#
     #-----------------------------------------------------------------------------------------#
-    # C0 = -0.6155764940651274
-    # C1 = -0.16747256519988604
-    # C2 = 0.18354218525309415
-    # C3 = -0.007637131069865292
-    # C4 = -0.936214597798238
-    # C5 = -0.07024607248050078
-    # C6 = 0.20316323099379538
-    # C7 = -0.009308739106244737
-    # C8 = 1.0628853767935942
-    # C9 = -0.059703865671985365
-    # C10 = 0.17267342962280333
-    # C11 = -0.007911726443198165
-    # C12 = 1.9422117529674363
-    # C13 = -0.16747256519988604
-    # C14 = 0.18354218525309415
-    # C15 = -0.007637131069865292
-    # C16 = 1.6215736492343256
-    # C17 = -0.07024607248050078
-    # C18 = 0.20316323099379538
-    # C19 = -0.009308739106244737
-    # C20 = 3.620673623826158
-    # C21 = -0.059703865671985365
-    # C22 = 0.17267342962280333
-    # C23 = -0.007911726443198165
-    # C = [C0, C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15, C16, C17, C18, C19, C20, C21, C22, C23]
 
     #------------------ DRONE OR CASE FIRST BLOCK ------------------#
     # C0 = -0.5092201124440394
