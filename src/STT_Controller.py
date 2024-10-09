@@ -223,10 +223,19 @@ class STT_Controller():
                 #--------------------------------------------------------------------#
 
                 #--------------------------- CONTROLLER 2 ---------------------------#
+
+                #----- block 1 -----#
                 kx = 5
                 ky = 3
                 kz = 3
                 max_vel = 1
+                #-------------------#
+                #----- block 2 -----#
+                # kx = 7
+                # ky = 3
+                # kz = 3
+                # max_vel = 2
+                #-------------------#
 
                 k = torch.diag(torch.tensor([kx, ky, kz]))
                 phi_matrix = torch.tanh(torch.matmul(k.to(torch.float32), e_matrix.to(torch.float32))) * (1 - torch.exp(- torch.pow(torch.matmul(k.to(torch.float32), e_matrix.to(torch.float32)), 2)))
