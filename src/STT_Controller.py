@@ -80,10 +80,13 @@ class STT_Controller():
         """Calculates the error between the current state and the target."""
         rate = rospy.Rate(1)
 
-        k = 5
         t_values = np.arange(self.start, self.end + 1, 5)
 
-        while not rospy.is_shutdown():
+        max_iterations = 1
+        count = 0
+        while not rospy.is_shutdown() and count < max_iterations:
+            count += 1
+
             for t in t_values:
                 gamma = self.gamma(t)
                 gamma_xl, gamma_yl, gamma_xu, gamma_yu = gamma[0], gamma[1], gamma[2], gamma[3]
@@ -96,32 +99,44 @@ class STT_Controller():
                 e1 = self.normalized_error(self.current_state.pose.pose.position.x, gamma_sx, gamma_dx)
                 e2 = self.normalized_error(self.current_state.pose.pose.position.y, gamma_sy, gamma_dy)
 
+                print("")
                 e_matrix = torch.tensor([e1, e2])
-                print("e_matrix: ", e_matrix)
+                print("e_matrix: ", e_matrix, "time: ", t)
+                print("current pose: ", self.current_state.pose.pose.position.x, self.current_state.pose.pose.position.y)
+                print("target pose: ", gamma_sx/2, gamma_sy/2)
+                print("--------------------------------------------------------------------")
 
-                epsilon1 = math.log((1 + e1) / (1 - e1))
-                epsilon2 = math.log((1 + e2) / (1 - e2))
+                #--------------------------- CONTROLLER 1 ---------------------------#
+                # k = 5
 
-                epsilon_matrix = torch.tensor([epsilon1, epsilon2])
-                gamma_d_matrix = torch.diag(torch.tensor([gamma_dx, gamma_dy]))
-                xi_matrix = 4 * torch.matmul(gamma_d_matrix.inverse(), (torch.eye(self.dimension) - torch.matmul(e_matrix.T, e_matrix)).inverse().to(torch.float64))
-                u_matrix = - k * torch.matmul(xi_matrix, epsilon_matrix.to(torch.float64))
+                # epsilon1 = math.log((1 + e1) / (1 - e1))
+                # epsilon2 = math.log((1 + e2) / (1 - e2))
 
-                v_x = u_matrix[0].item()
-                v_y = u_matrix[1].item()
+                # epsilon_matrix = torch.tensor([epsilon1, epsilon2])
+                # gamma_d_matrix = torch.diag(torch.tensor([gamma_dx, gamma_dy]))
+                # xi_matrix = 4 * torch.matmul(gamma_d_matrix.inverse(), (torch.eye(self.dimension) - torch.matmul(e_matrix.T, e_matrix)).inverse().to(torch.float64))
+                # u_matrix = - k * torch.matmul(xi_matrix, epsilon_matrix.to(torch.float64))
 
-                if -0.22 <= v_x <= 0.22 and -0.22 <= v_y <= 0.22:
-                    self.vel_msg.linear.x = v_x
-                    self.vel_msg.linear.y = v_y
-                    self.vel_pub.publish(self.vel_msg)
-                elif v_x > 0.22 and v_y > 0.22:
-                    self.vel_msg.linear.x = 0.22
-                    self.vel_msg.linear.y = 0.22
-                    self.vel_pub.publish(self.vel_msg)
-                else:
-                    self.vel_msg.linear.x = -0.22
-                    self.vel_msg.linear.y = -0.22
-                    self.vel_pub.publish(self.vel_msg)
+                # v_x = u_matrix[0].item()
+                # v_y = u_matrix[1].item()
+                #--------------------------------------------------------------------#
+
+                #--------------------------- CONTROLLER 2 ---------------------------#
+                kx = 5
+                ky = 5
+                max_vel = 1
+
+                k = torch.diag(torch.tensor([kx, ky]))
+                phi_matrix = torch.tanh(torch.matmul(k.to(torch.float32), e_matrix.to(torch.float32))) * (1 - torch.exp(- torch.pow(torch.matmul(k.to(torch.float32), e_matrix.to(torch.float32)), 2)))
+
+                v_x = -max_vel * phi_matrix[0].item()
+                v_y = -max_vel * phi_matrix[1].item()
+                self.control_input.append([v_x, v_y])
+                #--------------------------------------------------------------------#
+
+                self.vel_msg.linear.x = v_x
+                self.vel_msg.linear.y = v_y
+                self.vel_pub.publish(self.vel_msg)
 
                 rate.sleep()
 
@@ -129,7 +144,6 @@ class STT_Controller():
         """Calculates the error between the current state and the target."""
         rate = rospy.Rate(500)
 
-        max_vel = 5
         t_values = np.arange(self.start, self.end + self.step, self.step)
 
         while not rospy.is_shutdown() and not self.current_state.armed:
@@ -182,53 +196,50 @@ class STT_Controller():
                 e2 = self.normalized_error(self.current_pose.pose.position.y, gamma_sy, gamma_dy)
                 e3 = self.normalized_error(self.current_pose.pose.position.z, gamma_sz, gamma_dz)
 
-                try:
-                    print("")
-                    e_matrix = torch.tensor([e1, e2, e3])
-                    print("e_matrix: ", e_matrix, "time: ", t)
-                    print("current pose: ", self.current_pose.pose.position.x, self.current_pose.pose.position.y, self.current_pose.pose.position.z)
-                    print("target pose: ", gamma_sx/2, gamma_sy/2, gamma_sz/2)
-                    print("--------------------------------------------------------------------")
+                print("")
+                e_matrix = torch.tensor([e1, e2, e3])
+                print("e_matrix: ", e_matrix, "time: ", t)
+                print("current pose: ", self.current_pose.pose.position.x, self.current_pose.pose.position.y, self.current_pose.pose.position.z)
+                print("target pose: ", gamma_sx/2, gamma_sy/2, gamma_sz/2)
+                print("--------------------------------------------------------------------")
 
-                    #--------------------------- CONTROLLER 1 ---------------------------#
-                    # k = 1
-                    # epsilon1 = math.log((1 + e1) / (1 - e1))
-                    # epsilon2 = math.log((1 + e2) / (1 - e2))
-                    # epsilon3 = math.log((1 + e3) / (1 - e3))
+                #--------------------------- CONTROLLER 1 ---------------------------#
+                # k = 1
+                # epsilon1 = math.log((1 + e1) / (1 - e1))
+                # epsilon2 = math.log((1 + e2) / (1 - e2))
+                # epsilon3 = math.log((1 + e3) / (1 - e3))
 
-                    # epsilon_matrix = torch.tensor([epsilon1, epsilon2, epsilon3])
+                # epsilon_matrix = torch.tensor([epsilon1, epsilon2, epsilon3])
 
-                    # gamma_d_matrix = torch.diag(torch.tensor([gamma_dx, gamma_dy, gamma_dz]))
-                    # xi_matrix = 4 * torch.matmul(gamma_d_matrix.inverse().to(torch.float64), (torch.eye(self.dimension).to(torch.float64) - torch.matmul(e_matrix.T, e_matrix)).inverse().to(torch.float64))
-                    # u_matrix = torch.matmul(xi_matrix, epsilon_matrix.to(torch.float64))
+                # gamma_d_matrix = torch.diag(torch.tensor([gamma_dx, gamma_dy, gamma_dz]))
+                # xi_matrix = 4 * torch.matmul(gamma_d_matrix.inverse().to(torch.float64), (torch.eye(self.dimension).to(torch.float64) - torch.matmul(e_matrix.T, e_matrix)).inverse().to(torch.float64))
+                # u_matrix = torch.matmul(xi_matrix, epsilon_matrix.to(torch.float64))
 
-                    # v_x = 3.245 * u_matrix[0].item()
-                    # v_y = 1.75 * u_matrix[1].item()
-                    # v_z = 0.1 * u_matrix[2].item()
-                    # self.control_input.append([v_x, v_y, v_z])
-                    #--------------------------------------------------------------------#
+                # v_x = 3.245 * u_matrix[0].item()
+                # v_y = 1.75 * u_matrix[1].item()
+                # v_z = 0.1 * u_matrix[2].item()
+                # self.control_input.append([v_x, v_y, v_z])
+                #--------------------------------------------------------------------#
 
-                    #--------------------------- CONTROLLER 2 ---------------------------#
-                    kx = 7
-                    ky = 3
-                    kz = 3
+                #--------------------------- CONTROLLER 2 ---------------------------#
+                kx = 7
+                ky = 3
+                kz = 3
+                max_vel = 1
 
-                    k = torch.diag(torch.tensor([kx, ky, kz]))
-                    phi_matrix = torch.tanh(torch.matmul(k.to(torch.float32), e_matrix.to(torch.float32))) * (1 - torch.exp(- torch.pow(torch.matmul(k.to(torch.float32), e_matrix.to(torch.float32)), 2)))
+                k = torch.diag(torch.tensor([kx, ky, kz]))
+                phi_matrix = torch.tanh(torch.matmul(k.to(torch.float32), e_matrix.to(torch.float32))) * (1 - torch.exp(- torch.pow(torch.matmul(k.to(torch.float32), e_matrix.to(torch.float32)), 2)))
 
-                    v_x = -1 * phi_matrix[0].item()
-                    v_y = -1 * phi_matrix[1].item()
-                    v_z = -1 * phi_matrix[2].item()
-                    self.control_input.append([v_x, v_y, v_z])
-                    #--------------------------------------------------------------------#
+                v_x = -max_vel * phi_matrix[0].item()
+                v_y = -max_vel * phi_matrix[1].item()
+                v_z = -max_vel * phi_matrix[2].item()
+                self.control_input.append([v_x, v_y, v_z])
+                #--------------------------------------------------------------------#
 
-                    self.vel_msg.twist.linear.x = v_x
-                    self.vel_msg.twist.linear.y = v_y
-                    self.vel_msg.twist.linear.z = v_z
-                    self.vel_pub.publish(self.vel_msg)
-
-                except ValueError:
-                    rospy.INFO("Normalized error out of bounds!")
+                self.vel_msg.twist.linear.x = v_x
+                self.vel_msg.twist.linear.y = v_y
+                self.vel_msg.twist.linear.z = v_z
+                self.vel_pub.publish(self.vel_msg)
 
                 rate.sleep()
 
