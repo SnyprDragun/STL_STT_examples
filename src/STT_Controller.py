@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 import sys
-import re
-import subprocess
 import torch
 import rospy
 import numpy as np

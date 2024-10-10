@@ -2198,18 +2198,6 @@
 			"value" : "/opt/ros/noetic/share/catkin/cmake"
 		},
 		{
-			"name" : "class_loader_DIR",
-			"properties" : 
-			[
-				{
-					"name" : "HELPSTRING",
-					"value" : "The directory containing a CMake configuration file for class_loader."
-				}
-			],
-			"type" : "PATH",
-			"value" : "/opt/ros/noetic/share/class_loader/cmake"
-		},
-		{
 			"name" : "cpp_common_DIR",
 			"properties" : 
 			[
@@ -2256,42 +2244,6 @@
 			],
 			"type" : "STATIC",
 			"value" : "/home/subho/catkin_w_s/src/dd_stl_stt"
-		},
-		{
-			"name" : "diagnostic_msgs_DIR",
-			"properties" : 
-			[
-				{
-					"name" : "HELPSTRING",
-					"value" : "The directory containing a CMake configuration file for diagnostic_msgs."
-				}
-			],
-			"type" : "PATH",
-			"value" : "/opt/ros/noetic/share/diagnostic_msgs/cmake"
-		},
-		{
-			"name" : "diagnostic_updater_DIR",
-			"properties" : 
-			[
-				{
-					"name" : "HELPSTRING",
-					"value" : "The directory containing a CMake configuration file for diagnostic_updater."
-				}
-			],
-			"type" : "PATH",
-			"value" : "/opt/ros/noetic/share/diagnostic_updater/cmake"
-		},
-		{
-			"name" : "eigen_conversions_DIR",
-			"properties" : 
-			[
-				{
-					"name" : "HELPSTRING",
-					"value" : "The directory containing a CMake configuration file for eigen_conversions."
-				}
-			],
-			"type" : "PATH",
-			"value" : "/opt/ros/noetic/share/eigen_conversions/cmake"
 		},
 		{
 			"name" : "gencpp_DIR",
@@ -2606,30 +2558,6 @@
 			"value" : "/opt/ros/noetic/lib/libtf2.so"
 		},
 		{
-			"name" : "libmavconn_DIR",
-			"properties" : 
-			[
-				{
-					"name" : "HELPSTRING",
-					"value" : "The directory containing a CMake configuration file for libmavconn."
-				}
-			],
-			"type" : "PATH",
-			"value" : "/home/subho/catkin_w_s/devel/share/libmavconn/cmake"
-		},
-		{
-			"name" : "mavros_DIR",
-			"properties" : 
-			[
-				{
-					"name" : "HELPSTRING",
-					"value" : "The directory containing a CMake configuration file for mavros."
-				}
-			],
-			"type" : "PATH",
-			"value" : "/home/subho/catkin_w_s/devel/share/mavros/cmake"
-		},
-		{
 			"name" : "mavros_msgs_DIR",
 			"properties" : 
 			[
@@ -2688,18 +2616,6 @@
 			],
 			"type" : "PATH",
 			"value" : "/opt/ros/noetic/share/nav_msgs/cmake"
-		},
-		{
-			"name" : "pluginlib_DIR",
-			"properties" : 
-			[
-				{
-					"name" : "HELPSTRING",
-					"value" : "The directory containing a CMake configuration file for pluginlib."
-				}
-			],
-			"type" : "PATH",
-			"value" : "/opt/ros/noetic/share/pluginlib/cmake"
 		},
 		{
 			"name" : "rosconsole_DIR",
@@ -2772,30 +2688,6 @@
 			],
 			"type" : "PATH",
 			"value" : "/opt/ros/noetic/share/rosgraph_msgs/cmake"
-		},
-		{
-			"name" : "roslib_DIR",
-			"properties" : 
-			[
-				{
-					"name" : "HELPSTRING",
-					"value" : "The directory containing a CMake configuration file for roslib."
-				}
-			],
-			"type" : "PATH",
-			"value" : "/opt/ros/noetic/share/roslib/cmake"
-		},
-		{
-			"name" : "rospack_DIR",
-			"properties" : 
-			[
-				{
-					"name" : "HELPSTRING",
-					"value" : "The directory containing a CMake configuration file for rospack."
-				}
-			],
-			"type" : "PATH",
-			"value" : "/opt/ros/noetic/share/rospack/cmake"
 		},
 		{
 			"name" : "rospy_DIR",
@@ -2892,18 +2784,6 @@
 			],
 			"type" : "PATH",
 			"value" : "/opt/ros/noetic/share/tf2_ros/cmake"
-		},
-		{
-			"name" : "trajectory_msgs_DIR",
-			"properties" : 
-			[
-				{
-					"name" : "HELPSTRING",
-					"value" : "The directory containing a CMake configuration file for trajectory_msgs."
-				}
-			],
-			"type" : "PATH",
-			"value" : "/opt/ros/noetic/share/trajectory_msgs/cmake"
 		},
 		{
 			"name" : "uuid_msgs_DIR",
