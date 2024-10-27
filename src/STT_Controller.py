@@ -179,7 +179,7 @@ class STT_Controller():
             time.sleep(1)
 
         # self.takeoff_drone(1)
-        # rospy.sleep(15)
+        # time.sleep(15)
 
         for _ in range(1):
             self.vel_msg.twist.linear.x = 0
