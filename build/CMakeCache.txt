@@ -390,9 +390,6 @@ actionlib_msgs_DIR:PATH=/opt/ros/noetic/share/actionlib_msgs/cmake
 //The directory containing a CMake configuration file for catkin.
 catkin_DIR:PATH=/opt/ros/noetic/share/catkin/cmake
 
-//The directory containing a CMake configuration file for class_loader.
-class_loader_DIR:PATH=/opt/ros/noetic/share/class_loader/cmake
-
 //The directory containing a CMake configuration file for cpp_common.
 cpp_common_DIR:PATH=/opt/ros/noetic/share/cpp_common/cmake
 
@@ -404,15 +401,6 @@ dd_stl_stt_LIB_DEPENDS:STATIC=general;/opt/ros/noetic/lib/libtf2_ros.so;general;
 
 //Value Computed by CMake
 dd_stl_stt_SOURCE_DIR:STATIC=/home/subho/catkin_w_s/src/dd_stl_stt
-
-//The directory containing a CMake configuration file for diagnostic_msgs.
-diagnostic_msgs_DIR:PATH=/opt/ros/noetic/share/diagnostic_msgs/cmake
-
-//The directory containing a CMake configuration file for diagnostic_updater.
-diagnostic_updater_DIR:PATH=/opt/ros/noetic/share/diagnostic_updater/cmake
-
-//The directory containing a CMake configuration file for eigen_conversions.
-eigen_conversions_DIR:PATH=/opt/ros/noetic/share/eigen_conversions/cmake
 
 //The directory containing a CMake configuration file for gencpp.
 gencpp_DIR:PATH=/opt/ros/noetic/share/gencpp/cmake
@@ -487,12 +475,6 @@ gtest_main_LIB_DEPENDS:STATIC=general;gtest;
 //Path to a library.
 lib:FILEPATH=/opt/ros/noetic/lib/libtf2.so
 
-//The directory containing a CMake configuration file for libmavconn.
-libmavconn_DIR:PATH=/home/subho/catkin_w_s/devel/share/libmavconn/cmake
-
-//The directory containing a CMake configuration file for mavros.
-mavros_DIR:PATH=/home/subho/catkin_w_s/devel/share/mavros/cmake
-
 //The directory containing a CMake configuration file for mavros_msgs.
 mavros_msgs_DIR:PATH=/home/subho/catkin_w_s/devel/share/mavros_msgs/cmake
 
@@ -507,9 +489,6 @@ message_runtime_DIR:PATH=/opt/ros/noetic/share/message_runtime/cmake
 
 //The directory containing a CMake configuration file for nav_msgs.
 nav_msgs_DIR:PATH=/opt/ros/noetic/share/nav_msgs/cmake
-
-//The directory containing a CMake configuration file for pluginlib.
-pluginlib_DIR:PATH=/opt/ros/noetic/share/pluginlib/cmake
 
 //The directory containing a CMake configuration file for rosconsole.
 rosconsole_DIR:PATH=/opt/ros/noetic/share/rosconsole/cmake
@@ -528,12 +507,6 @@ rosgraph_DIR:PATH=/opt/ros/noetic/share/rosgraph/cmake
 
 //The directory containing a CMake configuration file for rosgraph_msgs.
 rosgraph_msgs_DIR:PATH=/opt/ros/noetic/share/rosgraph_msgs/cmake
-
-//The directory containing a CMake configuration file for roslib.
-roslib_DIR:PATH=/opt/ros/noetic/share/roslib/cmake
-
-//The directory containing a CMake configuration file for rospack.
-rospack_DIR:PATH=/opt/ros/noetic/share/rospack/cmake
 
 //The directory containing a CMake configuration file for rospy.
 rospy_DIR:PATH=/opt/ros/noetic/share/rospy/cmake
@@ -558,9 +531,6 @@ tf2_py_DIR:PATH=/opt/ros/noetic/share/tf2_py/cmake
 
 //The directory containing a CMake configuration file for tf2_ros.
 tf2_ros_DIR:PATH=/opt/ros/noetic/share/tf2_ros/cmake
-
-//The directory containing a CMake configuration file for trajectory_msgs.
-trajectory_msgs_DIR:PATH=/opt/ros/noetic/share/trajectory_msgs/cmake
 
 //The directory containing a CMake configuration file for uuid_msgs.
 uuid_msgs_DIR:PATH=/opt/ros/noetic/share/uuid_msgs/cmake
