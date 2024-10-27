@@ -1,19 +1,20 @@
 #!/usr/bin/env python3
+'''script for STT_Controller'''
 import sys
-import re
-import subprocess
+import time
 import torch
 import rospy
 import numpy as np
-from geometry_msgs.msg import Twist
-from nav_msgs.msg import Odometry
-from geometry_msgs.msg import Twist, TwistStamped, PoseStamped
-from mavros_msgs.srv import SetMode
-from mavros_msgs.msg import State
-import time
 import matplotlib.pyplot as plt
+from mavros_msgs.msg import State
+from nav_msgs.msg import Odometry
+from geometry_msgs.msg import Twist
+from mavros_msgs.srv import SetMode
 import matplotlib.patches as patches
+from mavros_msgs.srv import CommandBool, CommandTOL
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
+from geometry_msgs.msg import Twist, TwistStamped, PoseStamped
+
 
 class STT_Controller():
     def __init__(self, C, dimension, start, end):
@@ -65,6 +66,32 @@ class STT_Controller():
     def uav_pose_callback(self, msg):
         """Callback function for the pose subscriber."""
         self.current_pose = msg
+
+    def takeoff_drone(self, altitude):
+        rospy.wait_for_service('/mavros/cmd/arming')
+        rospy.wait_for_service('/mavros/cmd/takeoff')
+
+        try:
+            # Arm the drone
+            arming_client = rospy.ServiceProxy('/mavros/cmd/arming', CommandBool)
+            arming_response = arming_client(True)
+            
+            if arming_response.success:
+                rospy.loginfo("Drone armed successfully.")
+                rospy.sleep(3)  # Wait for a few seconds to ensure the drone is armed
+
+                # Takeoff
+                takeoff_client = rospy.ServiceProxy('/mavros/cmd/takeoff', CommandTOL)
+                takeoff_response = takeoff_client(min_pitch=0, yaw=0, latitude=0, longitude=0, altitude=altitude)
+                if takeoff_response.success:
+                    rospy.loginfo(f"Takeoff initiated to altitude {altitude} meters.")
+                else:
+                    rospy.logwarn("Takeoff command was not successful.")
+            else:
+                rospy.logwarn("Drone arming failed.")
+                
+        except rospy.ServiceException as e:
+            rospy.logerr(f"Service call failed: {e}")
 
     def gamma(self, t):
         '''method to calculate tube boundaries at time instance 't' using torch for optimization'''
@@ -150,6 +177,9 @@ class STT_Controller():
         while not rospy.is_shutdown() and not self.current_state.armed:
             rospy.loginfo("Waiting for drone to be armed...")
             time.sleep(1)
+
+        # self.takeoff_drone(1)
+        # rospy.sleep(15)
 
         for _ in range(1):
             self.vel_msg.twist.linear.x = 0
