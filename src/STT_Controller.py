@@ -1,10 +1,7 @@
 #!/usr/bin/env python3
 '''script for STT_Controller'''
 import sys
-<<<<<<< HEAD
 import time
-=======
->>>>>>> f11f825ce8ef234d6722f340917481ffb4a71bc4
 import torch
 import rospy
 import numpy as np
