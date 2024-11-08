@@ -33,7 +33,15 @@
 -----
 ## Quadcopter
 ### Python
-* Run `roslaunch px4 mavros_posix_sitl.launch` and then initialize takeoff using `>px4 commander takeoff`. You can also use the `cpp` files for purely takeoff purposes.
+* Launch `MAVROS` environment:
+  * For simulation, run `roslaunch px4 mavros_posix_sitl.launch` and then initialize takeoff using `>px4 commander takeoff`. You can also use the `cpp` files for purely takeoff purposes.
+  * For hardware testing, run `roslaunch mavros px4.launch` instead, and takeoff using `cpp` scripts. 
 * Once takeoff is complete, you can directly run `STT_Controller.py`. This initializes the controller for uav motion.
-* After the tube ends, the uav land automatically.
+* After the tube ends, the uav lands automatically.
 * Wait for a few minutes for the plots to be generated of the motion. You can retune the parameters based on the results obtained.
+
+### Cpp
+* Launch `MAVROS` environment same as before and initialize takeoff by running `rosrun <pkg name> root_controller`.
+* [`cpp` executable is not yet released, pls follow `python` implementation or stay tuned.]
+
+-----
