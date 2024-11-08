@@ -10,6 +10,14 @@
 * Python 3.8
 * PyTorch
 
+## Controller
+* The controller is based on bounded control strategies and ensures two main things:
+  * If inside the tube, stay inside the tube no matter what
+  * If outside the tube, try to come inside asap.
+* Tunable parameter `k` enables sharper turns for higher values. So If your STT has sharp turns, increment `k` to handle for them.
+* Each dimension has its own tunable `k`.
+* For more insight into the controller design for STTs, follow the publication listed [here](https://github.com/SnyprDragun/STL_SpatiotemporalTubes_Toolbox)
+
 ## Setup
 * you can find the Mechanum Omnibot setup [here]()
 * you can find the Quadcopter setup [here](https://github.com/SnyprDragun/PX4-MAVROS-Simulation-Setup).
@@ -26,4 +34,6 @@
 ## Quadcopter
 ### Python
 * Run `roslaunch px4 mavros_posix_sitl.launch` and then initialize takeoff using `>px4 commander takeoff`. You can also use the `cpp` files for purely takeoff purposes.
-* Once takeoff is complete, you can directly run `STT_Controller.py`.
+* Once takeoff is complete, you can directly run `STT_Controller.py`. This initializes the controller for uav motion.
+* After the tube ends, the uav land automatically.
+* Wait for a few minutes for the plots to be generated of the motion. You can retune the parameters based on the results obtained.
