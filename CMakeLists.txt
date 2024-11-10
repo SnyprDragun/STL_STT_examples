@@ -131,6 +131,7 @@ add_library(${PROJECT_NAME}
   src/scripts/takeoff_node.cpp
   src/scripts/offboard_node.cpp
   src/scripts/landing_node.cpp
+  src/scripts/STT_Controller.cpp
   # src/${PROJECT_NAME}/stl_stt_examples.cpp
 )
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})

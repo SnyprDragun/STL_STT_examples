@@ -1,4 +1,4 @@
-#include "dd_stl_stt/offboard_node.hpp"
+#include "dd_stl_stt/STT_Controller.hpp"
 
 mavros_msgs::State current_state;
 geometry_msgs::PoseStamped current_position;
@@ -18,6 +18,10 @@ Controller::Controller(){
 
     string set_mode_client_topic = "/mavros/set_mode";
     this->set_mode_client = this->nh.serviceClient<mavros_msgs::SetMode>(set_mode_client_topic);
+
+    start_ = 0; 
+    end_ = 100; 
+    step_ = 0.1;
 }
 
 void Controller::state_cb(const mavros_msgs::State& msg){
@@ -25,14 +29,14 @@ void Controller::state_cb(const mavros_msgs::State& msg){
 }
 
 void Controller::position_cb(const geometry_msgs::PoseStamped& msg){
-    current_position = msg
+    current_position = msg;
 }
 
 void Controller::init_connection(){
     Rate rate(20);
 
     ROS_INFO("Connecting to FCT...");
-    while(ok() && current_state_offboard.connected){
+    while(ok() && current_state.connected){
         ROS_INFO("Initializing controller_node...");
         spinOnce();
         rate.sleep();
@@ -41,7 +45,7 @@ void Controller::init_connection(){
     ROS_INFO("Connected!");
 }
 
-std::vector<double> Offboard::gamma(double time){
+vector<double> Controller::gamma(double time){
     Rate rate(20.0);
 
     int degree = 1;
@@ -60,35 +64,105 @@ std::vector<double> Offboard::gamma(double time){
     return real_tubes;
 }
 
-void Controller::controller(){
-    Rate rate(20.0);
+double Controller::normalized_error(double x, double gamma_sum, double gamma_diff) {
+    return ((2.0 * x - gamma_sum) / gamma_diff);
 }
 
-void Controller::follow_stt(){
-    Rate rate(20.0);
+void Controller::controller(){
+    Rate rate(500);
+    vector<double> t_values;
 
-    std::vector<double> x_u;
-    std::vector<double> x_l;
-    std::vector<double> y_u;
-    std::vector<double> y_l;
-    std::vector<double> z_u;
-    std::vector<double> z_l;
-
-    for (double time=0; time<61; time+=1){
-        x_u.push_back(gamma(time)[0]);
-        x_l.push_back(gamma(time)[1]);
-        y_u.push_back(gamma(time)[2]);
-        y_l.push_back(gamma(time)[3]);
-        z_u.push_back(gamma(time)[4]);
-        z_l.push_back(gamma(time)[5]);
+    for (double t = start_; t <= end_; t += step_) {
+        t_values.push_back(t);
     }
 
-    int time = 0;
-    while (time <= 60){
-        offboard((x_u[time] + x_l[time])/2, (y_u[time] + y_l[time])/2, (z_u[time] + z_l[time])/2);
-        ROS_INFO("Here");
-        time++;
+    while (ros::ok() && !current_state.armed) {
+        ROS_INFO("Waiting for drone to be armed...");
+        ros::Duration(1.0).sleep();
     }
+
+    // Set initial velocity to zero
+    vel_msg_.twist.linear.x = vel_msg_.twist.linear.y = vel_msg_.twist.linear.z = 0;
+    vel_pub_.publish(vel_msg_);
+    rate.sleep();
+
+    // Set OFFBOARD mode
+    if (!offboard_mode_set_ && current_state_.mode != "OFFBOARD") {
+        mavros_msgs::SetMode offboard_set_mode;
+        offboard_set_mode.request.custom_mode = "OFFBOARD";
+        if (set_mode_client_.call(offboard_set_mode) && offboard_set_mode.response.mode_sent) {
+            ROS_INFO("OFFBOARD mode set successfully.");
+            offboard_mode_set_ = true;
+        } else {
+            ROS_WARN("Failed to set OFFBOARD mode.");
+        }
+    }
+
+    ROS_INFO("OFFBOARD mode set. UAV ready for velocity control.");
+
+    int max_iterations = 1;
+    int count = 0;
+    while (ok() && count < max_iterations) {
+        count++;
+
+        for (double t : t_values) {
+            Duration(step_).sleep();
+            Eigen::VectorXd gamma(6); // Assume gamma returns Eigen::VectorXd of size 6
+            gamma = gamma(t);
+
+            gamma_u_.push_back({gamma[3], gamma[4], gamma[5]});
+            gamma_l_.push_back({gamma[0], gamma[1], gamma[2]});
+
+            double gamma_sx = gamma[3] + gamma[0];
+            double gamma_dx = gamma[3] - gamma[0];
+            double gamma_sy = gamma[4] + gamma[1];
+            double gamma_dy = gamma[4] - gamma[1];
+            double gamma_sz = gamma[5] + gamma[2];
+            double gamma_dz = gamma[5] - gamma[2];
+
+            trajectory_.push_back({current_pose_.pose.position.x, current_pose_.pose.position.y, current_pose_.pose.position.z});
+
+            double e1 = normalized_error(current_pose_.pose.position.x, gamma_sx, gamma_dx);
+            double e2 = normalized_error(current_pose_.pose.position.y, gamma_sy, gamma_dy);
+            double e3 = normalized_error(current_pose_.pose.position.z, gamma_sz, gamma_dz);
+
+            Eigen::Vector3d e_matrix(e1, e2, e3);
+            std::cout << "\ne_matrix: " << e_matrix.transpose() << " time: " << t << std::endl;
+            std::cout << "current pose: " << current_pose_.pose.position.x << ", " << current_pose_.pose.position.y << ", " << current_pose_.pose.position.z << std::endl;
+            std::cout << "target pose: " << gamma_sx / 2 << ", " << gamma_sy / 2 << ", " << gamma_sz / 2 << std::endl;
+            std::cout << "--------------------------------------------------------------------" << std::endl;
+
+            // Controller 2
+            double kx = 5, ky = 3, kz = 3, max_vel = 1;
+            Eigen::DiagonalMatrix<double, 3> k(kx, ky, kz);
+            Eigen::Vector3d phi_matrix = (k * e_matrix).array().tanh() * (1 - (- (k * e_matrix).array().square()).exp());
+
+            double v_x = -max_vel * phi_matrix[0];
+            double v_y = -max_vel * phi_matrix[1];
+            double v_z = -max_vel * phi_matrix[2];
+            control_input_.push_back({v_x, v_y, v_z});
+
+            vel_msg_.twist.linear.x = v_x;
+            vel_msg_.twist.linear.y = v_y;
+            vel_msg_.twist.linear.z = v_z;
+            vel_pub_.publish(vel_msg_);
+
+            rate.sleep();
+        }
+    }
+
+    if (!offboard_mode_set_ && current_state_.mode != "AUTO.LOITER") {
+        mavros_msgs::SetMode loiter_set_mode;
+        loiter_set_mode.request.custom_mode = "AUTO.LOITER";
+        if (set_mode_client_.call(loiter_set_mode) && loiter_set_mode.response.mode_sent) {
+            ROS_INFO("AUTO.LOITER mode set successfully.");
+            offboard_mode_set_ = true;
+        } else {
+            ROS_WARN("Failed to set AUTO.LOITER mode.");
+        }
+    }
+
+    ROS_INFO("AUTO.LOITER mode set. UAV on standby.");
 
     spinOnce(); 
     rate.sleep();

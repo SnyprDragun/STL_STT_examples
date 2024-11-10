@@ -1090,6 +1090,33 @@ gtest/fast:
 	$(MAKE) -f gtest/googletest/CMakeFiles/gtest.dir/build.make gtest/googletest/CMakeFiles/gtest.dir/build
 .PHONY : gtest/fast
 
+src/scripts/STT_Controller.o: src/scripts/STT_Controller.cpp.o
+
+.PHONY : src/scripts/STT_Controller.o
+
+# target to build an object file
+src/scripts/STT_Controller.cpp.o:
+	$(MAKE) -f CMakeFiles/dd_stl_stt.dir/build.make CMakeFiles/dd_stl_stt.dir/src/scripts/STT_Controller.cpp.o
+.PHONY : src/scripts/STT_Controller.cpp.o
+
+src/scripts/STT_Controller.i: src/scripts/STT_Controller.cpp.i
+
+.PHONY : src/scripts/STT_Controller.i
+
+# target to preprocess a source file
+src/scripts/STT_Controller.cpp.i:
+	$(MAKE) -f CMakeFiles/dd_stl_stt.dir/build.make CMakeFiles/dd_stl_stt.dir/src/scripts/STT_Controller.cpp.i
+.PHONY : src/scripts/STT_Controller.cpp.i
+
+src/scripts/STT_Controller.s: src/scripts/STT_Controller.cpp.s
+
+.PHONY : src/scripts/STT_Controller.s
+
+# target to generate assembly for a file
+src/scripts/STT_Controller.cpp.s:
+	$(MAKE) -f CMakeFiles/dd_stl_stt.dir/build.make CMakeFiles/dd_stl_stt.dir/src/scripts/STT_Controller.cpp.s
+.PHONY : src/scripts/STT_Controller.cpp.s
+
 src/scripts/landing_node.o: src/scripts/landing_node.cpp.o
 
 .PHONY : src/scripts/landing_node.o
@@ -1282,6 +1309,9 @@ help:
 	@echo "... gmock"
 	@echo "... gtest_main"
 	@echo "... gtest"
+	@echo "... src/scripts/STT_Controller.o"
+	@echo "... src/scripts/STT_Controller.i"
+	@echo "... src/scripts/STT_Controller.s"
 	@echo "... src/scripts/landing_node.o"
 	@echo "... src/scripts/landing_node.i"
 	@echo "... src/scripts/landing_node.s"

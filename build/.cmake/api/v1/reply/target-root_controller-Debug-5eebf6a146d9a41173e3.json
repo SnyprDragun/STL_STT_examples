@@ -2,7 +2,7 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "devel/lib/libdd_stl_stt.so"
+			"path" : "devel/lib/dd_stl_stt/root_controller"
 		}
 	],
 	"backtrace" : 1,
@@ -10,9 +10,8 @@
 	{
 		"commands" : 
 		[
-			"add_library",
-			"_install",
-			"install",
+			"add_executable",
+			"target_link_libraries",
 			"add_definitions",
 			"include",
 			"find_package",
@@ -22,7 +21,6 @@
 		"files" : 
 		[
 			"CMakeLists.txt",
-			"/opt/ros/noetic/share/catkin/cmake/custom_install.cmake",
 			"/opt/ros/noetic/share/rosconsole/cmake/rosconsole-extras.cmake",
 			"/opt/ros/noetic/share/rosconsole/cmake/rosconsoleConfig.cmake",
 			"/opt/ros/noetic/share/roscpp/cmake/roscppConfig.cmake",
@@ -38,97 +36,91 @@
 			{
 				"command" : 0,
 				"file" : 0,
-				"line" : 130,
-				"parent" : 0
-			},
-			{
-				"command" : 2,
-				"file" : 0,
-				"line" : 187,
+				"line" : 148,
 				"parent" : 0
 			},
 			{
 				"command" : 1,
-				"file" : 1,
-				"line" : 13,
-				"parent" : 2
+				"file" : 0,
+				"line" : 149,
+				"parent" : 0
 			},
 			{
-				"command" : 5,
+				"command" : 4,
 				"file" : 0,
 				"line" : 10,
 				"parent" : 0
 			},
 			{
-				"file" : 5,
+				"file" : 4,
+				"parent" : 3
+			},
+			{
+				"command" : 4,
+				"file" : 4,
+				"line" : 76,
 				"parent" : 4
 			},
 			{
-				"command" : 5,
-				"file" : 5,
-				"line" : 76,
-				"parent" : 5
-			},
-			{
-				"file" : 4,
-				"parent" : 6
-			},
-			{
-				"command" : 5,
-				"file" : 4,
-				"line" : 197,
-				"parent" : 7
-			},
-			{
 				"file" : 3,
-				"parent" : 8
+				"parent" : 5
 			},
 			{
 				"command" : 4,
 				"file" : 3,
-				"line" : 222,
-				"parent" : 9
+				"line" : 197,
+				"parent" : 6
 			},
 			{
 				"file" : 2,
+				"parent" : 7
+			},
+			{
+				"command" : 3,
+				"file" : 2,
+				"line" : 222,
+				"parent" : 8
+			},
+			{
+				"file" : 1,
+				"parent" : 9
+			},
+			{
+				"command" : 2,
+				"file" : 1,
+				"line" : 12,
 				"parent" : 10
 			},
 			{
 				"command" : 3,
-				"file" : 2,
-				"line" : 12,
-				"parent" : 11
-			},
-			{
-				"command" : 4,
-				"file" : 5,
+				"file" : 4,
 				"line" : 20,
-				"parent" : 5
+				"parent" : 4
 			},
 			{
-				"file" : 7,
+				"file" : 6,
+				"parent" : 12
+			},
+			{
+				"command" : 5,
+				"file" : 6,
+				"line" : 174,
 				"parent" : 13
 			},
 			{
-				"command" : 6,
-				"file" : 7,
-				"line" : 174,
+				"command" : 2,
+				"file" : 5,
+				"line" : 18,
 				"parent" : 14
 			},
 			{
-				"command" : 3,
-				"file" : 6,
-				"line" : 18,
-				"parent" : 15
-			},
-			{
-				"command" : 3,
-				"file" : 2,
+				"command" : 2,
+				"file" : 1,
 				"line" : 8,
-				"parent" : 11
+				"parent" : 10
 			},
 			{
-				"command" : 7,
+				"command" : 6,
 				"file" : 0,
 				"line" : 123,
 				"parent" : 0
@@ -141,92 +133,169 @@
 			"compileCommandFragments" : 
 			[
 				{
-					"fragment" : "-g -fPIC  "
+					"fragment" : "-g  "
 				}
 			],
 			"defines" : 
 			[
 				{
-					"backtrace" : 12,
+					"backtrace" : 11,
 					"define" : "ROSCONSOLE_BACKEND_LOG4CXX"
 				},
 				{
-					"backtrace" : 16,
+					"backtrace" : 15,
 					"define" : "ROS_BUILD_SHARED_LIBS=1"
 				},
 				{
-					"backtrace" : 17,
+					"backtrace" : 16,
 					"define" : "ROS_PACKAGE_NAME=\"dd_stl_stt\""
-				},
-				{
-					"define" : "dd_stl_stt_EXPORTS"
 				}
 			],
 			"includes" : 
 			[
 				{
-					"backtrace" : 18,
+					"backtrace" : 17,
 					"path" : "/home/subho/catkin_w_s/src/dd_stl_stt/include/dd_stl_stt"
 				},
 				{
-					"backtrace" : 18,
+					"backtrace" : 17,
 					"path" : "/home/subho/catkin_w_s/src/dd_stl_stt/include"
 				},
 				{
-					"backtrace" : 18,
+					"backtrace" : 17,
 					"path" : "/home/subho/catkin_w_s/devel/.private/mavros_msgs/include"
 				},
 				{
-					"backtrace" : 18,
+					"backtrace" : 17,
 					"path" : "/home/subho/catkin_w_s/src/mavros/mavros_msgs/include"
 				},
 				{
-					"backtrace" : 18,
+					"backtrace" : 17,
 					"path" : "/opt/ros/noetic/include"
 				},
 				{
-					"backtrace" : 18,
+					"backtrace" : 17,
 					"path" : "/opt/ros/noetic/share/xmlrpcpp/cmake/../../../include/xmlrpcpp"
 				}
 			],
 			"language" : "CXX",
 			"sourceIndexes" : 
 			[
-				0,
-				1,
-				2
+				0
 			]
 		}
 	],
-	"id" : "dd_stl_stt::@6890427a1f51a3e7e1df",
-	"install" : 
-	{
-		"destinations" : 
-		[
-			{
-				"backtrace" : 3,
-				"path" : "lib"
-			},
-			{
-				"backtrace" : 3,
-				"path" : "lib"
-			}
-		],
-		"prefix" : 
+	"dependencies" : 
+	[
 		{
-			"path" : "/usr/local"
+			"backtrace" : 2,
+			"id" : "dd_stl_stt::@6890427a1f51a3e7e1df"
 		}
-	},
+	],
+	"id" : "root_controller::@6890427a1f51a3e7e1df",
 	"link" : 
 	{
 		"commandFragments" : 
 		[
 			{
-				"fragment" : "",
+				"fragment" : "-g",
 				"role" : "flags"
 			},
 			{
-				"fragment" : "-Wl,-rpath,/opt/ros/noetic/lib:",
+				"fragment" : "-rdynamic",
+				"role" : "flags"
+			},
+			{
+				"fragment" : "-Wl,-rpath,/opt/ros/noetic/lib:/home/subho/catkin_w_s/src/dd_stl_stt/build/devel/lib",
+				"role" : "libraries"
+			},
+			{
+				"fragment" : "/opt/ros/noetic/lib/libtf2_ros.so",
+				"role" : "libraries"
+			},
+			{
+				"fragment" : "/opt/ros/noetic/lib/libactionlib.so",
+				"role" : "libraries"
+			},
+			{
+				"fragment" : "/opt/ros/noetic/lib/libmessage_filters.so",
+				"role" : "libraries"
+			},
+			{
+				"fragment" : "/opt/ros/noetic/lib/libroscpp.so",
+				"role" : "libraries"
+			},
+			{
+				"fragment" : "-lpthread",
+				"role" : "libraries"
+			},
+			{
+				"fragment" : "/usr/lib/aarch64-linux-gnu/libboost_chrono.so.1.71.0",
+				"role" : "libraries"
+			},
+			{
+				"fragment" : "/usr/lib/aarch64-linux-gnu/libboost_filesystem.so.1.71.0",
+				"role" : "libraries"
+			},
+			{
+				"fragment" : "/opt/ros/noetic/lib/librosconsole.so",
+				"role" : "libraries"
+			},
+			{
+				"fragment" : "/opt/ros/noetic/lib/librosconsole_log4cxx.so",
+				"role" : "libraries"
+			},
+			{
+				"fragment" : "/opt/ros/noetic/lib/librosconsole_backend_interface.so",
+				"role" : "libraries"
+			},
+			{
+				"fragment" : "-llog4cxx",
+				"role" : "libraries"
+			},
+			{
+				"fragment" : "/usr/lib/aarch64-linux-gnu/libboost_regex.so.1.71.0",
+				"role" : "libraries"
+			},
+			{
+				"fragment" : "/opt/ros/noetic/lib/libxmlrpcpp.so",
+				"role" : "libraries"
+			},
+			{
+				"fragment" : "/opt/ros/noetic/lib/libtf2.so",
+				"role" : "libraries"
+			},
+			{
+				"fragment" : "/opt/ros/noetic/lib/libroscpp_serialization.so",
+				"role" : "libraries"
+			},
+			{
+				"fragment" : "/opt/ros/noetic/lib/librostime.so",
+				"role" : "libraries"
+			},
+			{
+				"fragment" : "/usr/lib/aarch64-linux-gnu/libboost_date_time.so.1.71.0",
+				"role" : "libraries"
+			},
+			{
+				"fragment" : "/opt/ros/noetic/lib/libcpp_common.so",
+				"role" : "libraries"
+			},
+			{
+				"fragment" : "/usr/lib/aarch64-linux-gnu/libboost_system.so.1.71.0",
+				"role" : "libraries"
+			},
+			{
+				"fragment" : "/usr/lib/aarch64-linux-gnu/libboost_thread.so.1.71.0",
+				"role" : "libraries"
+			},
+			{
+				"fragment" : "/usr/lib/aarch64-linux-gnu/libconsole_bridge.so.0.4",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 2,
+				"fragment" : "devel/lib/libdd_stl_stt.so",
 				"role" : "libraries"
 			},
 			{
@@ -316,8 +385,8 @@
 		],
 		"language" : "CXX"
 	},
-	"name" : "dd_stl_stt",
-	"nameOnDisk" : "libdd_stl_stt.so",
+	"name" : "root_controller",
+	"nameOnDisk" : "root_controller",
 	"paths" : 
 	{
 		"build" : ".",
@@ -329,9 +398,7 @@
 			"name" : "Source Files",
 			"sourceIndexes" : 
 			[
-				0,
-				1,
-				2
+				0
 			]
 		}
 	],
@@ -340,21 +407,9 @@
 		{
 			"backtrace" : 1,
 			"compileGroupIndex" : 0,
-			"path" : "src/scripts/takeoff_node.cpp",
-			"sourceGroupIndex" : 0
-		},
-		{
-			"backtrace" : 1,
-			"compileGroupIndex" : 0,
-			"path" : "src/scripts/offboard_node.cpp",
-			"sourceGroupIndex" : 0
-		},
-		{
-			"backtrace" : 1,
-			"compileGroupIndex" : 0,
-			"path" : "src/scripts/landing_node.cpp",
+			"path" : "src/scripts/root_controller.cpp",
 			"sourceGroupIndex" : 0
 		}
 	],
-	"type" : "SHARED_LIBRARY"
+	"type" : "EXECUTABLE"
 }

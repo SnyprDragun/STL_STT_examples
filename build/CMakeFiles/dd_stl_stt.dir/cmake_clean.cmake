@@ -1,4 +1,5 @@
 file(REMOVE_RECURSE
+  "CMakeFiles/dd_stl_stt.dir/src/scripts/STT_Controller.cpp.o"
   "CMakeFiles/dd_stl_stt.dir/src/scripts/landing_node.cpp.o"
   "CMakeFiles/dd_stl_stt.dir/src/scripts/offboard_node.cpp.o"
   "CMakeFiles/dd_stl_stt.dir/src/scripts/takeoff_node.cpp.o"

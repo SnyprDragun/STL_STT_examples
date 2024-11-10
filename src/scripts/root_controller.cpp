@@ -1,6 +1,7 @@
 #include "dd_stl_stt/takeoff_node.hpp"
 #include "dd_stl_stt/offboard_node.hpp"
 #include "dd_stl_stt/landing_node.hpp"
+#include "dd_stl_stt/STT_Controller.hpp"
 
 mavros_msgs::State current_state;
 mavros_msgs::SetMode set_mode;
@@ -33,10 +34,6 @@ int main(int argc, char **argv){
             Offboard* offboard = new Offboard();
             offboard->init_connection();
             offboard->offboard(2, 2, 2);
-            ROS_INFO("This Done");
-            // offboard->panorama();
-            // offboard->mission();
-
             flag = false;
         }
     }
