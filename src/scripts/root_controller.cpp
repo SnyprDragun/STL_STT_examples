@@ -31,9 +31,14 @@ int main(int argc, char **argv){
             ROS_INFO("Takeoff Completed Successfully!");
             Duration(10).sleep();
 
-            Offboard* offboard = new Offboard();
-            offboard->init_connection();
-            offboard->offboard(2, 2, 2);
+            // Offboard* offboard = new Offboard();
+            // offboard->init_connection();
+            // offboard->offboard(2, 2, 2);
+
+            Controller* controller = new Controller();
+            controller->init_connection();
+            controller->controller();
+
             flag = false;
         }
     }

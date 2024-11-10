@@ -8,20 +8,18 @@
 #include <string.h>
 #include <iostream>
 #include <ros/ros.h>
-#include <Eigen/Dense>
+#include <torch/torch.h>
 #include <mavros_msgs/State.h>
 #include <mavros_msgs/SetMode.h>
-#include <mavros_msgs/Waypoint.h>
-#include <sensor_msgs/NavSatFix.h>
 #include <mavros_msgs/CommandTOL.h>
 #include <mavros_msgs/CommandBool.h>
-#include <mavros_msgs/WaypointPush.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TwistStamped.h>
 #include <mavros_msgs/GlobalPositionTarget.h>
 
 using namespace std;
 using namespace ros;
+using namespace torch;
 
 class Controller{
     private:
@@ -31,13 +29,17 @@ class Controller{
         Publisher position_pub;
         Publisher velocity_pub;
         ServiceClient set_mode_client;
-        
+        bool offboard_mode_set = false;
+        bool loiter_mode_set = false;
+        double start, end, step;
+        vector<vector<double>> gamma_u, gamma_l, trajectory, control_input;
+
     public:
         Controller();
         void state_cb(const mavros_msgs::State&);
         void position_cb(const geometry_msgs::PoseStamped&);
         void init_connection();
-        std::vector<double> gamma(double);
+        Tensor gamma(double);
         double normalized_error(double, double, double);
         void controller();
 };
