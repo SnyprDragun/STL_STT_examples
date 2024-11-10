@@ -22,17 +22,17 @@
 * you can find the Mechanum Omnibot setup [here]()
 * you can find the Quadcopter setup [here](https://github.com/SnyprDragun/PX4-MAVROS-Simulation-Setup).
 * clone this repo to the `src` folder of your workspace. Subsequent sections walk you through both the `cpp` and `python` implementations.
-* modify the `STT_Controller.py` file:
-  * scroll down to the bottom and uncomment any one set of coefficients depending upon your robot (Mechanum Omnibot / Quadcopter).
-  * make sure that you are calling the correct function of the class `STT_Controller()`. It should look like:
-    * `STT_Controller(C, 2, start_time, end_time).omnibot_control()` for Mechanum Omnibot.
-    * `STT_COntroller(C, 3, start_time, end_time).uav_control()` for Quadcopter.
-    * second argument of the class is the dimension of the tubes.
 
 ## Mechanum Omnibot
 -----
 ## Quadcopter
 ### Python
+* modify the `STT_Controller.py` file:
+  * scroll down to the bottom and uncomment any one set of coefficients depending upon your robot (Mechanum Omnibot / Quadcopter).
+  * make sure that you are calling the correct function of the class `STT_Controller()`. It should look like:
+    * `STT_Controller(C, 2, start_time, end_time).omnibot_control()` for Mechanum Omnibot.
+    * `STT_Controller(C, 3, start_time, end_time).uav_control()` for Quadcopter.
+    * second argument of the class is the dimension of the tubes.
 * Launch `MAVROS` environment:
   * For simulation, run `roslaunch px4 mavros_posix_sitl.launch` and then initialize takeoff using `>px4 commander takeoff`. You can also use the `cpp` files for purely takeoff purposes.
   * For hardware testing, run `roslaunch mavros px4.launch` instead, and takeoff using `cpp` scripts. 
@@ -41,7 +41,11 @@
 * Wait for a few minutes for the plots to be generated of the motion. You can retune the parameters based on the results obtained.
 
 ### Cpp
-* Launch `MAVROS` environment same as before and initialize takeoff by running `rosrun <pkg name> root_controller`.
-* [`cpp` executable is not yet released, pls follow `python` implementation or stay tuned.]
+* Launch `MAVROS` environment same as before:
+  * Simulation: `roslaunch px4 mavros_posix_sitl.launch`
+  * Hardware: `roslaunch mavros px4.launch`
+* Initialize navigation by running `rosrun dd_stl_stt root_controller`.
+* `root_controller` takes care of takeoff, following STT using the controller, and finally landing once tube ends.
+* If you want uav to stay still once tube ends, just comment out the last few lines in `root_controller` and build the package.
 
 -----
