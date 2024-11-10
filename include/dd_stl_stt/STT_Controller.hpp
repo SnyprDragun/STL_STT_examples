@@ -31,11 +31,15 @@ class Controller{
         ServiceClient set_mode_client;
         bool offboard_mode_set = false;
         bool loiter_mode_set = false;
+
+        int degree;
+        int dimension;
+        Tensor C;
         double start, end, step;
         vector<vector<double>> gamma_u, gamma_l, trajectory, control_input;
 
     public:
-        Controller();
+        Controller(int degree, int dimension, const std::vector<std::vector<float>>& C);
         void state_cb(const mavros_msgs::State&);
         void position_cb(const geometry_msgs::PoseStamped&);
         void init_connection();

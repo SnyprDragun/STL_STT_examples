@@ -5,7 +5,7 @@ mavros_msgs::State current_state;
 geometry_msgs::PoseStamped current_position;
 geometry_msgs::TwistStamped velocity_pub_msg;
 
-Controller::Controller(){
+Controller::Controller(int degree, int dimension, const std::vector<std::vector<float>>& C): degree(degree), dimension(dimension) {
     string state_sub_topic = "/mavros/state";
     this->state_sub = this->nh.subscribe(state_sub_topic, 10, &Controller::state_cb, this);
 
@@ -24,6 +24,7 @@ Controller::Controller(){
     start = 0; 
     end = 100; 
     step = 0.1;
+    C = tensor(C, kFloat32).view({2 * dimension_, degree_ + 1});
 }
 
 void Controller::state_cb(const mavros_msgs::State& msg){
