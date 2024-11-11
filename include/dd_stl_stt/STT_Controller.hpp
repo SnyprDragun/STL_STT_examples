@@ -8,7 +8,7 @@
 #include <string.h>
 #include <iostream>
 #include <ros/ros.h>
-#include <torch/torch.h>
+#include <Eigen/Dense>
 #include <mavros_msgs/State.h>
 #include <mavros_msgs/SetMode.h>
 #include <mavros_msgs/CommandTOL.h>
@@ -19,7 +19,7 @@
 
 using namespace std;
 using namespace ros;
-using namespace torch;
+using namespace Eigen;
 
 class Controller{
     private:
@@ -34,16 +34,16 @@ class Controller{
 
         int degree;
         int dimension;
-        Tensor C;
+        MatrixXf C;
         double start, end, step;
         vector<vector<double>> gamma_u, gamma_l, trajectory, control_input;
 
     public:
-        Controller(int degree, int dimension, const std::vector<std::vector<float>>& C);
+        Controller(int, int, const vector<vector<double>>&, double, double, double);
         void state_cb(const mavros_msgs::State&);
         void position_cb(const geometry_msgs::PoseStamped&);
         void init_connection();
-        Tensor gamma(double);
+        VectorXf gamma(double);
         double normalized_error(double, double, double);
         void controller();
 };

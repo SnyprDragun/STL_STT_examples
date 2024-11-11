@@ -124,6 +124,7 @@ include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}
   include
   ${catkin_INCLUDE_DIRS}
+  "/usr/include/eigen3"
 )
 
 ## Declare a C++ library

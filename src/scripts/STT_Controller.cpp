@@ -5,7 +5,8 @@ mavros_msgs::State current_state;
 geometry_msgs::PoseStamped current_position;
 geometry_msgs::TwistStamped velocity_pub_msg;
 
-Controller::Controller(int degree, int dimension, const std::vector<std::vector<float>>& C): degree(degree), dimension(dimension) {
+Controller::Controller(int degree, int dimension, const vector<vector<double>>& C, double start, double end, double step)
+    : degree(degree), dimension(dimension), start(start), end(end), step(step) {
     string state_sub_topic = "/mavros/state";
     this->state_sub = this->nh.subscribe(state_sub_topic, 10, &Controller::state_cb, this);
 
@@ -21,10 +22,12 @@ Controller::Controller(int degree, int dimension, const std::vector<std::vector<
     string set_mode_client_topic = "/mavros/set_mode";
     this->set_mode_client = this->nh.serviceClient<mavros_msgs::SetMode>(set_mode_client_topic);
 
-    start = 0; 
-    end = 100; 
-    step = 0.1;
-    C = tensor(C, kFloat32).view({2 * dimension_, degree_ + 1});
+    this->C = MatrixXf::Zero(2 * dimension, degree + 1);
+    for (int i = 0; i < 2 * dimension; ++i) {
+        for (int j = 0; j <= degree; ++j) {
+            this->C(i, j) = C[i][j];
+        }
+    }
 }
 
 void Controller::state_cb(const mavros_msgs::State& msg){
@@ -48,15 +51,13 @@ void Controller::init_connection(){
     ROS_INFO("Connected!");
 }
 
-Tensor Controller::gamma(double t) {
-    Tensor t_tensor = tensor({t}, kFloat32);
-    Tensor powers_of_t = empty({degree + 1}, kFloat32);
-
+VectorXf Controller::gamma(double t) {
+    VectorXf powers_of_t(degree + 1);
     for (int j = 0; j <= degree; ++j) {
-        powers_of_t[j] = pow(t_tensor, j);
+        powers_of_t(j) = pow(t, j);
     }
 
-    Tensor real_tubes = matmul(C, powers_of_t);
+    VectorXf real_tubes = C * powers_of_t;
     return real_tubes;
 }
 
@@ -83,9 +84,9 @@ void Controller::controller(){
 
     if (!offboard_mode_set && current_state.mode != "OFFBOARD") {
         set_mode.request.custom_mode = "OFFBOARD";
-        if (set_mode_client_.callset_mode) && (set_mode.response.mode_sent) {
+        if ((set_mode_client.call(set_mode)) && (set_mode.response.mode_sent)) {
             ROS_INFO("OFFBOARD mode set successfully.");
-            offboard_mode_set_ = true;
+            offboard_mode_set = true;
         } else {
             ROS_WARN("Failed to set OFFBOARD mode.");
         }
@@ -100,27 +101,27 @@ void Controller::controller(){
 
         for (double t : t_values) {
             Duration(step).sleep();
-            Tensor gamma = gamma(t);
+            VectorXf gamma = this->gamma(t);
 
-            gamma_u.push_back({gamma[3].item<double>(), gamma[4].item<double>(), gamma[5].item<double>()});
-            gamma_l.push_back({gamma[0].item<double>(), gamma[1].item<double>(), gamma[2].item<double>()});
+            gamma_u.push_back({gamma(3), gamma(4), gamma(5)});
+            gamma_l.push_back({gamma(0), gamma(1), gamma(2)});
 
-            double gamma_sx = gamma[3].item<double>() + gamma[0].item<double>();
-            double gamma_dx = gamma[3].item<double>() - gamma[0].item<double>();
-            double gamma_sy = gamma[4].item<double>() + gamma[1].item<double>();
-            double gamma_dy = gamma[4].item<double>() - gamma[1].item<double>();
-            double gamma_sz = gamma[5].item<double>() + gamma[2].item<double>();
-            double gamma_dz = gamma[5].item<double>() - gamma[2].item<double>();
+            double gamma_sx = gamma(3) + gamma(0);
+            double gamma_dx = gamma(3) - gamma(0);
+            double gamma_sy = gamma(4) + gamma(1);
+            double gamma_dy = gamma(4) - gamma(1);
+            double gamma_sz = gamma(5) + gamma(2);
+            double gamma_dz = gamma(5) - gamma(2);
 
-            trajectory.push_back({current_pose.pose.position.x, current_pose.pose.position.y, current_pose.pose.position.z});
+            trajectory.push_back({current_position.pose.position.x, current_position.pose.position.y, current_position.pose.position.z});
 
-            double e1 = normalized_error(current_pose.pose.position.x, gamma_sx, gamma_dx);
-            double e2 = normalized_error(current_pose.pose.position.y, gamma_sy, gamma_dy);
-            double e3 = normalized_error(current_pose.pose.position.z, gamma_sz, gamma_dz);
+            double e1 = normalized_error(current_position.pose.position.x, gamma_sx, gamma_dx);
+            double e2 = normalized_error(current_position.pose.position.y, gamma_sy, gamma_dy);
+            double e3 = normalized_error(current_position.pose.position.z, gamma_sz, gamma_dz);
 
-            Tensor e_matrix = tensor({e1, e2, e3}, kFloat32);
-            cout << "\ne_matrix: " << e_matrix << " time: " << t << endl;
-            cout << "current pose: " << current_pose.pose.position.x << ", " << current_pose.pose.position.y << ", " << current_pose.pose.position.z << endl;
+            Vector3f e_matrix(e1, e2, e3);
+            cout << "\ne_matrix: " << e_matrix.transpose() << " time: " << t << endl;
+            cout << "current pose: " << current_position.pose.position.x << ", " << current_position.pose.position.y << ", " << current_position.pose.position.z << endl;
             cout << "target pose: " << gamma_sx / 2 << ", " << gamma_sy / 2 << ", " << gamma_sz / 2 << endl;
             cout << "--------------------------------------------------------------------" << endl;
 
@@ -137,19 +138,19 @@ void Controller::controller(){
             // double kx = 7, ky = 3, kz = 3, max_vel = 2;
             //-------------------//
 
-            Tensor k = tensor({kx, ky, kz}, kFloat32).diag();
-            Tensor phi_matrix = tanh(k.matmul(e_matrix)) * (1 - exp(-pow(k.matmul(e_matrix), 2)));
+            Vector3f k(kx, ky, kz);
+            Vector3f phi_matrix = (k.array() * e_matrix.array().tanh() * (1 - (-e_matrix.array().square()).exp())).matrix();
 
-            double v_x = -max_vel * phi_matrix[0].item<double>();
-            double v_y = -max_vel * phi_matrix[1].item<double>();
-            double v_z = -max_vel * phi_matrix[2].item<double>();
-            control_input_.push_back({v_x, v_y, v_z});
+            double v_x = -max_vel * phi_matrix(0);
+            double v_y = -max_vel * phi_matrix(1);
+            double v_z = -max_vel * phi_matrix(2);
+            control_input.push_back({v_x, v_y, v_z});
             //--------------------------------------------------------------------//
 
             velocity_pub_msg.twist.linear.x = v_x;
             velocity_pub_msg.twist.linear.y = v_y;
             velocity_pub_msg.twist.linear.z = v_z;
-            vel_pub.publish(velocity_pub_msg);
+            velocity_pub.publish(velocity_pub_msg);
 
             rate.sleep();
         }

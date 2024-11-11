@@ -6,5 +6,10 @@
     "python.analysis.extraPaths": [
         "/home/subho/catkin_w_s/devel/lib/python3/dist-packages",
         "/opt/ros/noetic/lib/python3/dist-packages"
-    ]
+    ],
+    "files.associations": {
+        "core": "cpp",
+        "dense": "cpp",
+        "iostream": "cpp"
+    }
 }
