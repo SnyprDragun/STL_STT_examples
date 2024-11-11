@@ -10,7 +10,7 @@ Controller::Controller(int degree, int dimension, const vector<vector<double>>& 
     string state_sub_topic = "/mavros/state";
     this->state_sub = this->nh.subscribe(state_sub_topic, 10, &Controller::state_cb, this);
 
-    string position_sub_topic = "/mavros/global_position/local";
+    string position_sub_topic = "/mavros/local_position/pose";
     this->position_sub = this->nh.subscribe(position_sub_topic, 10, &Controller::position_cb, this);
     
     string position_pub_topic = "/mavros/setpoint_position/local";
@@ -73,10 +73,10 @@ void Controller::controller(){
         t_values.push_back(t);
     }
 
-    while (ok() && !current_state.armed) {
-        ROS_INFO("Waiting for drone to be armed...");
-        Duration(1.0).sleep();
-    }
+    // while (ok() && !current_state.armed) {
+    //     ROS_INFO("Waiting for drone to be armed...");
+    //     Duration(1.0).sleep();
+    // }
 
     velocity_pub_msg.twist.linear.x = velocity_pub_msg.twist.linear.y = velocity_pub_msg.twist.linear.z = 0;
     velocity_pub.publish(velocity_pub_msg);

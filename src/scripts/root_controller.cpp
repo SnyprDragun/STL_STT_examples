@@ -3,9 +3,6 @@
 #include "dd_stl_stt/landing_node.hpp"
 #include "dd_stl_stt/STT_Controller.hpp"
 
-mavros_msgs::State current_state;
-mavros_msgs::SetMode set_mode;
-
 //------------------ OR CASE FIRST BLOCK ------------------//
 const double C0 = -0.5092201124440394;
 const double C1 = -1.665740011109661;
@@ -126,7 +123,7 @@ int main(int argc, char **argv){
             // offboard->init_connection();
             // offboard->offboard(2, 2, 2);
 
-            ROS_INFO("Controller starting...")
+            ROS_INFO("Controller starting...");
             Controller* controller = new Controller(degree_, dimension_, C_, start_, end_, step_);
             controller->init_connection();
             controller->controller();
