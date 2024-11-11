@@ -28,9 +28,7 @@ class Controller{
         Subscriber position_sub;
         Publisher position_pub;
         Publisher velocity_pub;
-        ServiceClient set_mode_client;
-        bool offboard_mode_set = false;
-        bool loiter_mode_set = false;
+        ServiceClient set_custom_mode_client;
 
         int degree;
         int dimension;

@@ -1,8 +1,8 @@
 #include "dd_stl_stt/STT_Controller.hpp"
 
-mavros_msgs::SetMode set_mode;
-mavros_msgs::State current_state;
-geometry_msgs::PoseStamped current_position;
+mavros_msgs::SetMode set_custom_mode;
+mavros_msgs::State current_state_feedback;
+geometry_msgs::PoseStamped current_position_feedback;
 geometry_msgs::TwistStamped velocity_pub_msg;
 
 Controller::Controller(int degree, int dimension, const vector<vector<double>>& C, double start, double end, double step)
@@ -19,8 +19,8 @@ Controller::Controller(int degree, int dimension, const vector<vector<double>>& 
     string vel_pub_topic = "/mavros/setpoint_velocity/cmd_vel";
     this->velocity_pub = this->nh.advertise<geometry_msgs::TwistStamped>(vel_pub_topic, 10);
 
-    string set_mode_client_topic = "/mavros/set_mode";
-    this->set_mode_client = this->nh.serviceClient<mavros_msgs::SetMode>(set_mode_client_topic);
+    string set_custom_mode_client_topic = "/mavros/set_custom_mode";
+    this->set_custom_mode_client = this->nh.serviceClient<mavros_msgs::SetMode>(set_custom_mode_client_topic);
 
     this->C = MatrixXf::Zero(2 * dimension, degree + 1);
     for (int i = 0; i < 2 * dimension; ++i) {
@@ -31,18 +31,18 @@ Controller::Controller(int degree, int dimension, const vector<vector<double>>& 
 }
 
 void Controller::state_cb(const mavros_msgs::State& msg){
-    current_state = msg;
+    current_state_feedback = msg;
 }
 
 void Controller::position_cb(const geometry_msgs::PoseStamped& msg){
-    current_position = msg;
+    current_position_feedback = msg;
 }
 
 void Controller::init_connection(){
     Rate rate(20);
 
     ROS_INFO("Connecting to FCT...");
-    while(ok() && current_state.connected){
+    while(ok() && current_state_feedback.connected){
         ROS_INFO("Initializing controller_node...");
         spinOnce();
         rate.sleep();
@@ -56,7 +56,6 @@ VectorXf Controller::gamma(double t) {
     for (int j = 0; j <= degree; ++j) {
         powers_of_t(j) = pow(t, j);
     }
-
     VectorXf real_tubes = C * powers_of_t;
     return real_tubes;
 }
@@ -73,31 +72,34 @@ void Controller::controller(){
         t_values.push_back(t);
     }
 
-    // while (ok() && !current_state.armed) {
-    //     ROS_INFO("Waiting for drone to be armed...");
-    //     Duration(1.0).sleep();
-    // }
-
-    velocity_pub_msg.twist.linear.x = velocity_pub_msg.twist.linear.y = velocity_pub_msg.twist.linear.z = 0;
-    velocity_pub.publish(velocity_pub_msg);
-    rate.sleep();
-
-    if (!offboard_mode_set && current_state.mode != "OFFBOARD") {
-        set_mode.request.custom_mode = "OFFBOARD";
-        if ((set_mode_client.call(set_mode)) && (set_mode.response.mode_sent)) {
-            ROS_INFO("OFFBOARD mode set successfully.");
-            offboard_mode_set = true;
-        } else {
-            ROS_WARN("Failed to set OFFBOARD mode.");
-        }
-    }
-
-    ROS_INFO("UAV ready for velocity control.");
-
     int max_iterations = 1;
     int count = 0;
+
+    velocity_pub_msg.twist.linear.x = velocity_pub_msg.twist.linear.y = velocity_pub_msg.twist.linear.z = 0;
+    for(int i = 100; ok() && i > 0; --i){
+        velocity_pub.publish(velocity_pub_msg);
+        spinOnce();
+        rate.sleep();
+    }
+
+    mavros_msgs::SetMode offb_set_custom_mode;
+    offb_set_custom_mode.request.custom_mode = "OFFBOARD";
+    Time last_request = Time::now();
+
     while (ok() && count < max_iterations) {
         count++;
+        
+        cout << "check mode before: " << current_state_feedback << endl;
+
+        if(current_state_feedback.mode != "OFFBOARD" && (Time::now() - last_request > Duration(5.0))) {
+            cout << "check mode after: " << current_state_feedback << endl;
+            if ((set_custom_mode_client.call(offb_set_custom_mode) && offb_set_custom_mode.response.mode_sent)) {
+                ROS_INFO("OFFBOARD mode set successfully.");
+            }
+            last_request = Time::now();
+        }
+
+        Duration(10).sleep();
 
         for (double t : t_values) {
             Duration(step).sleep();
@@ -113,17 +115,17 @@ void Controller::controller(){
             double gamma_sz = gamma(5) + gamma(2);
             double gamma_dz = gamma(5) - gamma(2);
 
-            trajectory.push_back({current_position.pose.position.x, current_position.pose.position.y, current_position.pose.position.z});
+            trajectory.push_back({current_position_feedback.pose.position.x, current_position_feedback.pose.position.y, current_position_feedback.pose.position.z});
 
-            double e1 = normalized_error(current_position.pose.position.x, gamma_sx, gamma_dx);
-            double e2 = normalized_error(current_position.pose.position.y, gamma_sy, gamma_dy);
-            double e3 = normalized_error(current_position.pose.position.z, gamma_sz, gamma_dz);
+            double e1 = normalized_error(current_position_feedback.pose.position.x, gamma_sx, gamma_dx);
+            double e2 = normalized_error(current_position_feedback.pose.position.y, gamma_sy, gamma_dy);
+            double e3 = normalized_error(current_position_feedback.pose.position.z, gamma_sz, gamma_dz);
 
             Vector3f e_matrix(e1, e2, e3);
-            cout << "\ne_matrix: " << e_matrix.transpose() << " time: " << t << endl;
-            cout << "current pose: " << current_position.pose.position.x << ", " << current_position.pose.position.y << ", " << current_position.pose.position.z << endl;
-            cout << "target pose: " << gamma_sx / 2 << ", " << gamma_sy / 2 << ", " << gamma_sz / 2 << endl;
-            cout << "--------------------------------------------------------------------" << endl;
+            // cout << "\ne_matrix: " << e_matrix.transpose() << " time: " << t << endl;
+            // cout << "current pose: " << current_position_feedback.pose.position.x << ", " << current_position_feedback.pose.position.y << ", " << current_position_feedback.pose.position.z << endl;
+            // cout << "target pose: " << gamma_sx / 2 << ", " << gamma_sy / 2 << ", " << gamma_sz / 2 << endl;
+            // cout << "--------------------------------------------------------------------" << endl;
 
             //--------------------------- CONTROLLER 1 ---------------------------//
             //--------------------------------------------------------------------//
@@ -151,23 +153,20 @@ void Controller::controller(){
             velocity_pub_msg.twist.linear.y = v_y;
             velocity_pub_msg.twist.linear.z = v_z;
             velocity_pub.publish(velocity_pub_msg);
-
-            rate.sleep();
         }
-    }
 
-    if (!loiter_mode_set && current_state.mode != "AUTO.LOITER") {
-        set_mode.request.custom_mode = "AUTO.LOITER";
-        if (set_mode_client.call(set_mode) && set_mode.response.mode_sent) {
-            ROS_INFO("AUTO.LOITER mode set successfully.");
-            loiter_mode_set = true;
-        } else {
-            ROS_WARN("Failed to set AUTO.LOITER mode.");
+        if (current_state_feedback.mode != "AUTO.LOITER") {
+            set_custom_mode.request.custom_mode = "AUTO.LOITER";
+            if (set_custom_mode_client.call(set_custom_mode) && set_custom_mode.response.mode_sent) {
+                ROS_INFO("AUTO.LOITER mode set successfully.");
+            } else {
+                ROS_WARN("Failed to set AUTO.LOITER mode.");
+            }
         }
+
+        ROS_INFO("UAV on standby.");
+
+        spinOnce(); 
+        rate.sleep();
     }
-
-    ROS_INFO("UAV on standby.");
-
-    spinOnce(); 
-    rate.sleep();
 }

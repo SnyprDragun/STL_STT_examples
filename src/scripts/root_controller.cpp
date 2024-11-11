@@ -3,6 +3,9 @@
 #include "dd_stl_stt/landing_node.hpp"
 #include "dd_stl_stt/STT_Controller.hpp"
 
+mavros_msgs::State current_state;
+mavros_msgs::SetMode set_mode;
+
 //------------------ OR CASE FIRST BLOCK ------------------//
 const double C0 = -0.5092201124440394;
 const double C1 = -1.665740011109661;
@@ -101,36 +104,36 @@ int main(int argc, char **argv){
 
     float altitude = 1.0;
 
-    Time::init();
-    Time last_request = Time::now();
+    // Time::init();
+    // Time last_request = Time::now();
 
-    bool flag = true;
-    while (flag){
-        if (current_state.mode != "STABILIZED" && (Time::now() - last_request > Duration(5.0))){
-            ROS_INFO("Waiting to complete takeoff...");
-        }
-        else{
+    // bool flag = true;
+    // while (flag){
+    //     if (current_state.mode != "STABILIZED" && (Time::now() - last_request > Duration(5.0))){
+    //         ROS_INFO("Waiting to complete takeoff...");
+    //     }
+    //     else{
 
-            Takeoff* takeoff = new Takeoff();
-            takeoff->init_connection();
-            takeoff->arm();
-            takeoff->takeoff(altitude);
+    Takeoff* takeoff = new Takeoff();
+    takeoff->init_connection();
+    takeoff->arm();
+    takeoff->takeoff(altitude);
 
-            ROS_INFO("Takeoff Completed Successfully!");
-            Duration(10).sleep();
+    ROS_INFO("Takeoff Completed Successfully!");
+    Duration(10).sleep();
 
-            // Offboard* offboard = new Offboard();
-            // offboard->init_connection();
-            // offboard->offboard(2, 2, 2);
+    // Offboard* offboard = new Offboard();
+    // offboard->init_connection();
+    // offboard->offboard(2, 2, 2);
 
-            ROS_INFO("Controller starting...");
-            Controller* controller = new Controller(degree_, dimension_, C_, start_, end_, step_);
-            controller->init_connection();
-            controller->controller();
+    ROS_INFO("Controller starting...");
+    Controller* controller = new Controller(degree_, dimension_, C_, start_, end_, step_);
+    controller->init_connection();
+    controller->controller();
 
-            flag = false;
-        }
-    }
+    // flag = false;
+    //     }
+    // }
 
     Duration(10).sleep();
     Land* land = new Land();
