@@ -1,4 +1,5 @@
 #include "dd_stl_stt/STT_Controller.hpp"
+#include "dd_stl_stt/mode_setter.hpp"
 
 mavros_msgs::SetMode set_custom_mode;
 mavros_msgs::State current_state_feedback;
@@ -205,6 +206,9 @@ void Controller::controller() {
                 break;
             }
         }
+
+        Setter* setter = new Setter();
+        setter->OFFBOARD();
 
         for (double t : t_values) {
             Duration(step).sleep();
