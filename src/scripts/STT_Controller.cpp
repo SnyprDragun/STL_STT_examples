@@ -64,7 +64,115 @@ double Controller::normalized_error(double x, double gamma_sum, double gamma_dif
     return ((2.0 * x - gamma_sum) / gamma_diff);
 }
 
-void Controller::controller(){
+// void Controller::controller(){
+//     Rate rate(500);
+
+//     vector<double> t_values;
+//     for (double t = start; t <= end; t += step) {
+//         t_values.push_back(t);
+//     }
+
+//     int max_iterations = 1;
+//     int count = 0;
+
+//     velocity_pub_msg.twist.linear.x = velocity_pub_msg.twist.linear.y = velocity_pub_msg.twist.linear.z = 0;
+//     for(int i = 100; ok() && i > 0; --i){
+//         velocity_pub.publish(velocity_pub_msg);
+//         spinOnce();
+//         rate.sleep();
+//     }
+
+//     mavros_msgs::SetMode offb_set_custom_mode;
+//     offb_set_custom_mode.request.custom_mode = "OFFBOARD";
+//     Time last_request = Time::now();
+
+//     while (ok() && count < max_iterations) {
+//         count++;
+        
+//         cout << "check mode before: " << current_state_feedback << endl;
+
+//         if(current_state_feedback.mode != "OFFBOARD" && (Time::now() - last_request > Duration(5.0))) {
+//             cout << "check mode after: " << current_state_feedback << endl;
+//             if ((set_custom_mode_client.call(offb_set_custom_mode) && offb_set_custom_mode.response.mode_sent)) {
+//                 ROS_INFO("OFFBOARD mode set successfully.");
+//             }
+//             last_request = Time::now();
+//         }
+
+//         Duration(10).sleep();
+
+//         for (double t : t_values) {
+//             Duration(step).sleep();
+//             VectorXf gamma = this->gamma(t);
+
+//             gamma_u.push_back({gamma(3), gamma(4), gamma(5)});
+//             gamma_l.push_back({gamma(0), gamma(1), gamma(2)});
+
+//             double gamma_sx = gamma(3) + gamma(0);
+//             double gamma_dx = gamma(3) - gamma(0);
+//             double gamma_sy = gamma(4) + gamma(1);
+//             double gamma_dy = gamma(4) - gamma(1);
+//             double gamma_sz = gamma(5) + gamma(2);
+//             double gamma_dz = gamma(5) - gamma(2);
+
+//             trajectory.push_back({current_position_feedback.pose.position.x, current_position_feedback.pose.position.y, current_position_feedback.pose.position.z});
+
+//             double e1 = normalized_error(current_position_feedback.pose.position.x, gamma_sx, gamma_dx);
+//             double e2 = normalized_error(current_position_feedback.pose.position.y, gamma_sy, gamma_dy);
+//             double e3 = normalized_error(current_position_feedback.pose.position.z, gamma_sz, gamma_dz);
+
+//             Vector3f e_matrix(e1, e2, e3);
+//             // cout << "\ne_matrix: " << e_matrix.transpose() << " time: " << t << endl;
+//             // cout << "current pose: " << current_position_feedback.pose.position.x << ", " << current_position_feedback.pose.position.y << ", " << current_position_feedback.pose.position.z << endl;
+//             // cout << "target pose: " << gamma_sx / 2 << ", " << gamma_sy / 2 << ", " << gamma_sz / 2 << endl;
+//             // cout << "--------------------------------------------------------------------" << endl;
+
+//             //--------------------------- CONTROLLER 1 ---------------------------//
+//             //--------------------------------------------------------------------//
+
+//             //--------------------------- CONTROLLER 2 ---------------------------//
+
+//             //----- block 1 -----//
+//             double kx = 5, ky = 3, kz = 3, max_vel = 1;
+//             //-------------------//
+
+//             //----- block 2 -----//
+//             // double kx = 7, ky = 3, kz = 3, max_vel = 2;
+//             //-------------------//
+
+//             Vector3f k(kx, ky, kz);
+//             Vector3f phi_matrix = (k.array() * e_matrix.array().tanh() * (1 - (-e_matrix.array().square()).exp())).matrix();
+
+//             double v_x = -max_vel * phi_matrix(0);
+//             double v_y = -max_vel * phi_matrix(1);
+//             double v_z = -max_vel * phi_matrix(2);
+//             control_input.push_back({v_x, v_y, v_z});
+//             //--------------------------------------------------------------------//
+
+//             velocity_pub_msg.twist.linear.x = v_x;
+//             velocity_pub_msg.twist.linear.y = v_y;
+//             velocity_pub_msg.twist.linear.z = v_z;
+//             velocity_pub.publish(velocity_pub_msg);
+//         }
+
+//         if (current_state_feedback.mode != "AUTO.LOITER") {
+//             set_custom_mode.request.custom_mode = "AUTO.LOITER";
+//             if (set_custom_mode_client.call(set_custom_mode) && set_custom_mode.response.mode_sent) {
+//                 ROS_INFO("AUTO.LOITER mode set successfully.");
+//             } else {
+//                 ROS_WARN("Failed to set AUTO.LOITER mode.");
+//             }
+//         }
+
+//         ROS_INFO("UAV on standby.");
+
+//         spinOnce(); 
+//         rate.sleep();
+//     }
+// }
+
+
+void Controller::controller() {
     Rate rate(500);
 
     vector<double> t_values;
@@ -84,22 +192,19 @@ void Controller::controller(){
 
     mavros_msgs::SetMode offb_set_custom_mode;
     offb_set_custom_mode.request.custom_mode = "OFFBOARD";
-    Time last_request = Time::now();
 
     while (ok() && count < max_iterations) {
         count++;
-        
-        cout << "check mode before: " << current_state_feedback << endl;
 
-        if(current_state_feedback.mode != "OFFBOARD" && (Time::now() - last_request > Duration(5.0))) {
-            cout << "check mode after: " << current_state_feedback << endl;
-            if ((set_custom_mode_client.call(offb_set_custom_mode) && offb_set_custom_mode.response.mode_sent)) {
+        if (current_state_feedback.mode != "OFFBOARD") {
+            set_custom_mode.request.custom_mode = "OFFBOARD";
+            if (set_custom_mode_client.call(set_custom_mode) && set_custom_mode.response.mode_sent) {
                 ROS_INFO("OFFBOARD mode set successfully.");
+            } else {
+                ROS_WARN("Failed to set OFFBOARD mode.");
+                break;
             }
-            last_request = Time::now();
         }
-
-        Duration(10).sleep();
 
         for (double t : t_values) {
             Duration(step).sleep();
@@ -122,24 +227,9 @@ void Controller::controller(){
             double e3 = normalized_error(current_position_feedback.pose.position.z, gamma_sz, gamma_dz);
 
             Vector3f e_matrix(e1, e2, e3);
-            // cout << "\ne_matrix: " << e_matrix.transpose() << " time: " << t << endl;
-            // cout << "current pose: " << current_position_feedback.pose.position.x << ", " << current_position_feedback.pose.position.y << ", " << current_position_feedback.pose.position.z << endl;
-            // cout << "target pose: " << gamma_sx / 2 << ", " << gamma_sy / 2 << ", " << gamma_sz / 2 << endl;
-            // cout << "--------------------------------------------------------------------" << endl;
 
-            //--------------------------- CONTROLLER 1 ---------------------------//
-            //--------------------------------------------------------------------//
-
-            //--------------------------- CONTROLLER 2 ---------------------------//
-
-            //----- block 1 -----//
+            //--------------------------- CONTROLLER PARAMETERS ---------------------------//
             double kx = 5, ky = 3, kz = 3, max_vel = 1;
-            //-------------------//
-
-            //----- block 2 -----//
-            // double kx = 7, ky = 3, kz = 3, max_vel = 2;
-            //-------------------//
-
             Vector3f k(kx, ky, kz);
             Vector3f phi_matrix = (k.array() * e_matrix.array().tanh() * (1 - (-e_matrix.array().square()).exp())).matrix();
 
@@ -155,17 +245,16 @@ void Controller::controller(){
             velocity_pub.publish(velocity_pub_msg);
         }
 
-        if (current_state_feedback.mode != "AUTO.LOITER") {
-            set_custom_mode.request.custom_mode = "AUTO.LOITER";
+        if (current_state_feedback.mode != "STABILIZED") {
+            set_custom_mode.request.custom_mode = "STABILIZED";
             if (set_custom_mode_client.call(set_custom_mode) && set_custom_mode.response.mode_sent) {
-                ROS_INFO("AUTO.LOITER mode set successfully.");
+                ROS_INFO("STABILIZED mode set successfully.");
             } else {
-                ROS_WARN("Failed to set AUTO.LOITER mode.");
+                ROS_WARN("Failed to set STABILIZED mode.");
             }
         }
 
         ROS_INFO("UAV on standby.");
-
         spinOnce(); 
         rate.sleep();
     }

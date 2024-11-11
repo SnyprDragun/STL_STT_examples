@@ -104,36 +104,16 @@ int main(int argc, char **argv){
 
     float altitude = 1.0;
 
-    // Time::init();
-    // Time last_request = Time::now();
-
-    // bool flag = true;
-    // while (flag){
-    //     if (current_state.mode != "STABILIZED" && (Time::now() - last_request > Duration(5.0))){
-    //         ROS_INFO("Waiting to complete takeoff...");
-    //     }
-    //     else{
-
     Takeoff* takeoff = new Takeoff();
     takeoff->init_connection();
     takeoff->arm();
     takeoff->takeoff(altitude);
-
-    ROS_INFO("Takeoff Completed Successfully!");
     Duration(10).sleep();
-
-    // Offboard* offboard = new Offboard();
-    // offboard->init_connection();
-    // offboard->offboard(2, 2, 2);
 
     ROS_INFO("Controller starting...");
     Controller* controller = new Controller(degree_, dimension_, C_, start_, end_, step_);
     controller->init_connection();
     controller->controller();
-
-    // flag = false;
-    //     }
-    // }
 
     Duration(10).sleep();
     Land* land = new Land();
