@@ -63,7 +63,7 @@ void Takeoff::takeoff(float altitude){
 
     bool flag_1 = true;
     while(flag_1){
-        if(current_state_takeoff.mode != "AUTO.TAKEOFF" && (Time::now() - last_request > Duration(0.001))){
+        if(current_state_takeoff.mode != "AUTO.TAKEOFF" && (Time::now() - last_request > Duration(5.0))){
             if(this->takeoff_client.call(takeoff_cmd) && takeoff_cmd.response.success){
                 ROS_INFO("Taking Off");
                 flag_1 = false;
@@ -76,7 +76,7 @@ void Takeoff::takeoff(float altitude){
 
     bool flag_2 = true;
     while (flag_2){
-        if (current_state_takeoff.mode != "AUTO.LOITER" && (Time::now() - last_request > Duration(0.001))){
+        if (current_state_takeoff.mode != "AUTO.LOITER" && (Time::now() - last_request > Duration(5.0))){
             ROS_INFO("Waiting to complete takeoff...");
         }
         else{
