@@ -36,10 +36,10 @@ class Offboard{
         void init_connection();
         void offboard(double, double, double);
         void panorama();
+        void follow_stt(int, int, const vector<vector<double>>&, double, double, double);
         // void sendWaypoints(const std::vector<geometry_msgs::PoseStamped>&);
         void mission();
-        std::vector<double> gamma(double);
-        void follow_stt();
+        vector<double> gamma(double);
 };
 
 #endif

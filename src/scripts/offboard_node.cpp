@@ -1,4 +1,5 @@
 #include "dd_stl_stt/offboard_node.hpp"
+#include "dd_stl_stt/STT_Controller.hpp"
 
 mavros_msgs::State current_state_offboard;
 geometry_msgs::PoseStamped curve;
@@ -127,6 +128,48 @@ void Offboard::panorama(){
     }
 }
 
+void Offboard::follow_stt(int degree_, int dimension_, const vector<vector<double>>& C_, double start_, double end_, double step_){
+    Rate rate(20.0);
+
+    geometry_msgs::PoseStamped pose;
+
+    pose.pose.position.x = 0;
+    pose.pose.position.y = 0;
+    pose.pose.position.z = 2.5;
+
+    for(int i = 100; ok() && i > 0; --i){
+        position_pub.publish(pose);
+        spinOnce();
+        rate.sleep();
+    }
+
+    mavros_msgs::SetMode offb_set_mode;
+    offb_set_mode.request.custom_mode = "OFFBOARD";
+
+    Time last_request = Time::now();
+
+    int max_iterations = 1;
+    int count = 0;
+
+    while(ok() && count < max_iterations){
+        if( current_state_offboard.mode != "OFFBOARD" && (Time::now() - last_request > Duration(5.0))){
+            if( set_mode_client.call(offb_set_mode) && offb_set_mode.response.mode_sent){
+                ROS_INFO("Preparing to move...");
+            }
+            last_request = Time::now();
+        }
+
+        position_pub.publish(pose);
+
+        ROS_INFO("Controller starting...");
+        Controller* controller = new Controller(degree_, dimension_, C_, start_, end_, step_);
+        controller->init_connection();
+        controller->controller();
+
+        spinOnce();
+        rate.sleep();
+    }
+}
 
 void Offboard::mission(){
     Rate rate(20.0);
@@ -254,32 +297,32 @@ std::vector<double> Offboard::gamma(double time){
     return real_tubes;
 }
 
-void Offboard::follow_stt(){
-    Rate rate(20.0);
+// void Offboard::follow_stt(){
+//     Rate rate(20.0);
 
-    std::vector<double> x_u;
-    std::vector<double> x_l;
-    std::vector<double> y_u;
-    std::vector<double> y_l;
-    std::vector<double> z_u;
-    std::vector<double> z_l;
+//     std::vector<double> x_u;
+//     std::vector<double> x_l;
+//     std::vector<double> y_u;
+//     std::vector<double> y_l;
+//     std::vector<double> z_u;
+//     std::vector<double> z_l;
 
-    for (double time=0; time<61; time+=1){
-        x_u.push_back(gamma(time)[0]);
-        x_l.push_back(gamma(time)[1]);
-        y_u.push_back(gamma(time)[2]);
-        y_l.push_back(gamma(time)[3]);
-        z_u.push_back(gamma(time)[4]);
-        z_l.push_back(gamma(time)[5]);
-    }
+//     for (double time=0; time<61; time+=1){
+//         x_u.push_back(gamma(time)[0]);
+//         x_l.push_back(gamma(time)[1]);
+//         y_u.push_back(gamma(time)[2]);
+//         y_l.push_back(gamma(time)[3]);
+//         z_u.push_back(gamma(time)[4]);
+//         z_l.push_back(gamma(time)[5]);
+//     }
 
-    int time = 0;
-    while (time <= 60){
-        offboard((x_u[time] + x_l[time])/2, (y_u[time] + y_l[time])/2, (z_u[time] + z_l[time])/2);
-        ROS_INFO("Here");
-        time++;
-    }
+//     int time = 0;
+//     while (time <= 60){
+//         offboard((x_u[time] + x_l[time])/2, (y_u[time] + y_l[time])/2, (z_u[time] + z_l[time])/2);
+//         ROS_INFO("Here");
+//         time++;
+//     }
 
-    spinOnce(); 
-    rate.sleep();
-}
+//     spinOnce(); 
+//     rate.sleep();
+// }

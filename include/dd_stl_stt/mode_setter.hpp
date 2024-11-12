@@ -18,6 +18,7 @@ class Setter{
     private:
         NodeHandle nh;
         Subscriber setter_state_sub;
+        Publisher setter_position_pub;
         ServiceClient mode_setter_client;
 
     public:

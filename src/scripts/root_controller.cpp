@@ -1,10 +1,6 @@
 #include "dd_stl_stt/takeoff_node.hpp"
 #include "dd_stl_stt/offboard_node.hpp"
 #include "dd_stl_stt/landing_node.hpp"
-#include "dd_stl_stt/STT_Controller.hpp"
-
-mavros_msgs::State current_state;
-mavros_msgs::SetMode set_mode;
 
 //------------------ OR CASE FIRST BLOCK ------------------//
 const double C0 = -0.5092201124440394;
@@ -82,7 +78,7 @@ const double C35 = -0.0001699023672777245;
 // const double C34 = 0.004422992408222249;
 // const double C35 = -8.864906559813607e-05;
 
-const vector<vector<double>> C_ = {
+const vector<vector<double>> _C_ = {
     {C0, C1, C2, C3, C4, C5}, 
     {C6, C7, C8, C9, C10, C11}, 
     {C12, C13, C14, C15, C16, C17}, 
@@ -91,11 +87,11 @@ const vector<vector<double>> C_ = {
     {C30, C31, C32, C33, C34, C35}
 };
 
-int degree_ = 5;
-int dimension_ = 3;
-double start_ = 0.0;
-double end_ = 15.0;
-double step_ = 0.1;
+int _degree_ = 5;
+int _dimension_ = 3;
+double _start_ = 0.0;
+double _end_ = 15.0;
+double _step_ = 0.1;
 
 int main(int argc, char **argv){
     init(argc, argv, "root_controller", init_options::AnonymousName);
@@ -110,10 +106,9 @@ int main(int argc, char **argv){
     takeoff->takeoff(altitude);
     Duration(10).sleep();
 
-    ROS_INFO("Controller starting...");
-    Controller* controller = new Controller(degree_, dimension_, C_, start_, end_, step_);
-    controller->init_connection();
-    controller->controller();
+    Offboard* offboard = new Offboard();
+    offboard->init_connection();
+    offboard->follow_stt(_degree_, _dimension_, _C_, _start_, _end_, _step_);
 
     Duration(10).sleep();
     Land* land = new Land();
