@@ -148,23 +148,25 @@ void Offboard::follow_stt(int degree_, int dimension_, const vector<vector<doubl
 
     Time last_request = Time::now();
 
-    int max_iterations = 1;
     int count = 0;
 
-    while(ok() && count < max_iterations){
-        if( current_state_offboard.mode != "OFFBOARD" && (Time::now() - last_request > Duration(5.0))){
+    while(ok()){
+        if(current_state_offboard.mode != "OFFBOARD" && (Time::now() - last_request > Duration(5.0))){
             if( set_mode_client.call(offb_set_mode) && offb_set_mode.response.mode_sent){
-                ROS_INFO("Preparing to move...");
+                ROS_INFO("OFFBOARD mode set!");
             }
             last_request = Time::now();
         }
 
         position_pub.publish(pose);
 
-        ROS_INFO("Controller starting...");
-        Controller* controller = new Controller(degree_, dimension_, C_, start_, end_, step_);
-        controller->init_connection();
-        controller->controller();
+        if(current_state_offboard.mode == "OFFBOARD"){
+            ROS_INFO("Controller starting...");
+            Controller* controller = new Controller(degree_, dimension_, C_, start_, end_, step_);
+            controller->init_connection();
+            controller->controller();
+            break;
+        }
 
         spinOnce();
         rate.sleep();

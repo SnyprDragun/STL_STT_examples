@@ -107,10 +107,27 @@ void Controller::controller() {
 
             Vector3f e_matrix(e1, e2, e3);
 
-            //--------------------------- CONTROLLER PARAMETERS ---------------------------//
-            double kx = 5, ky = 3, kz = 3, max_vel = 1;
-            Vector3f k(kx, ky, kz);
-            Vector3f phi_matrix = (k.array() * e_matrix.array().tanh() * (1 - (-e_matrix.array().square()).exp())).matrix();
+            cout << "\ne_matrix: " << e_matrix.transpose() << " time: " << t << endl;
+            cout << "current pose: " << current_position_feedback.pose.position.x << ", " << current_position_feedback.pose.position.y << ", " << current_position_feedback.pose.position.z << endl;
+            cout << "target pose: " << gamma_sx / 2 << ", " << gamma_sy / 2 << ", " << gamma_sz / 2 << endl;
+            cout << "--------------------------------------------------------------------" << endl;
+
+
+            //--------------------------- CONTROLLER 1 ---------------------------//
+            //--------------------------------------------------------------------//
+
+            //--------------------------- CONTROLLER 2 ---------------------------//
+
+            //----- block 1 -----//
+            double kx = 5, ky = 3, kz = 3, max_vel = 1.5;
+            //-------------------//
+
+            //----- block 2 -----//
+            // double kx = 7, ky = 3, kz = 3, max_vel = 2;
+            //-------------------//
+
+            DiagonalMatrix<float, 3> k(kx, ky, kz);
+            Vector3f phi_matrix = (k * e_matrix).array().tanh() * (1.0f - (-((k * e_matrix).array().square())).exp());
 
             double v_x = -max_vel * phi_matrix(0);
             double v_y = -max_vel * phi_matrix(1);
@@ -122,6 +139,9 @@ void Controller::controller() {
             velocity_pub_msg.twist.linear.y = v_y;
             velocity_pub_msg.twist.linear.z = v_z;
             velocity_pub.publish(velocity_pub_msg);
+
+            spinOnce();
+            rate.sleep();
         }
     }
 }
