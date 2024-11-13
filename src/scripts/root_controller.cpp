@@ -103,6 +103,7 @@ int main(int argc, char **argv){
     Takeoff* takeoff = new Takeoff();
     takeoff->init_connection();
     takeoff->arm();
+    ROS_INFO("here?");
     takeoff->takeoff(altitude);
     Duration(10).sleep();
 

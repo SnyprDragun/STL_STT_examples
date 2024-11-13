@@ -18,7 +18,7 @@ class Takeoff{
     private:
         NodeHandle nh;
         Subscriber state_sub;
-        Publisher global_pos_pub;
+        Subscriber position_sub;
         ServiceClient takeoff_client;
         ServiceClient arming_client;
         ServiceClient set_mode_client;
@@ -26,6 +26,7 @@ class Takeoff{
     public:
         Takeoff();
         void state_cb(const mavros_msgs::State&);
+        void position_cb(const geometry_msgs::PoseStamped&);
         void init_connection();
         void arm();
         void takeoff(float);

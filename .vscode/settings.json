@@ -11,6 +11,7 @@
         "core": "cpp",
         "dense": "cpp",
         "iostream": "cpp",
-        "vector": "cpp"
+        "vector": "cpp",
+        "string": "cpp"
     }
 }

@@ -152,7 +152,7 @@ void Offboard::follow_stt(int degree_, int dimension_, const vector<vector<doubl
 
     while(ok()){
         if(current_state_offboard.mode != "OFFBOARD" && (Time::now() - last_request > Duration(5.0))){
-            if( set_mode_client.call(offb_set_mode) && offb_set_mode.response.mode_sent){
+            if(set_mode_client.call(offb_set_mode) && offb_set_mode.response.mode_sent){
                 ROS_INFO("OFFBOARD mode set!");
             }
             last_request = Time::now();
@@ -165,6 +165,17 @@ void Offboard::follow_stt(int degree_, int dimension_, const vector<vector<doubl
             Controller* controller = new Controller(degree_, dimension_, C_, start_, end_, step_);
             controller->init_connection();
             controller->controller();
+
+            offb_set_mode.request.custom_mode = "AUTO.LOITER";
+            while(ok()){
+                if(current_state_offboard.mode != "AUTO.LOITER" && (Time::now() - last_request > Duration(5.0))){
+                    if(set_mode_client.call(offb_set_mode) && offb_set_mode.response.mode_sent){
+                        ROS_INFO("Standby");
+                        break;
+                    }
+                    last_request = Time::now();
+                }
+            }
             break;
         }
 
