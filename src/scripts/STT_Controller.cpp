@@ -119,7 +119,7 @@ void Controller::controller() {
             //--------------------------- CONTROLLER 2 ---------------------------//
 
             //----- block 1 -----//
-            double kx = 5, ky = 3, kz = 3, max_vel = 1.5;
+            double kx = 5, ky = 3, kz = 3, max_vel = 1;
             //-------------------//
 
             //----- block 2 -----//
@@ -129,7 +129,7 @@ void Controller::controller() {
             DiagonalMatrix<float, 3> k(kx, ky, kz);
             Vector3f phi_matrix = (k * e_matrix).array().tanh() * (1.0f - (-((k * e_matrix).array().square())).exp());
 
-            double v_x = -max_vel * phi_matrix(0);
+            double v_x = -1.8 * phi_matrix(0);
             double v_y = -max_vel * phi_matrix(1);
             double v_z = -max_vel * phi_matrix(2);
             control_input.push_back({v_x, v_y, v_z});

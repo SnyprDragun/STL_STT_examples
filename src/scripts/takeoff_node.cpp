@@ -73,11 +73,10 @@ void Takeoff::takeoff(float altitude){
     mavros_msgs::SetMode offb_set_mode;
     offb_set_mode.request.custom_mode = "AUTO.LOITER";
 
-    Time last_request = Time::now();
+    Time last_request1 = Time::now();
 
     while(ok()){
-        ROS_INFO("1");
-        if(current_state_takeoff.mode != "AUTO.LOITER" && (Time::now() - last_request > Duration(5.0))){
+        if(current_state_takeoff.mode != "AUTO.LOITER" && (Time::now() - last_request1 > Duration(5.0))){
             ROS_INFO("should not be here");
             if(set_mode_client.call(offb_set_mode) && offb_set_mode.response.mode_sent){
                 if(current_state_takeoff.mode == "AUTO.LOITER"){
@@ -85,7 +84,7 @@ void Takeoff::takeoff(float altitude){
                     break;
                 }
             }
-            last_request = Time::now();
+            last_request1 = Time::now();
         }
         else{
             break;
@@ -94,9 +93,10 @@ void Takeoff::takeoff(float altitude){
         rate.sleep();
     }
 
+    Time last_request2 = Time::now();
+
     while(ok()){
-        ROS_INFO("2");
-        if(current_state_takeoff.mode != "AUTO.TAKEOFF" && (Time::now() - last_request > Duration(5.0))){
+        if(current_state_takeoff.mode != "AUTO.TAKEOFF" && (Time::now() - last_request2 > Duration(5.0))){
             if(this->takeoff_client.call(takeoff_cmd) && takeoff_cmd.response.success){
                 if(current_state_takeoff.mode == "AUTO.TAKEOFF" && takeoff_position.pose.position.x > 1){
                     ROS_INFO("Taking Off");
@@ -106,10 +106,15 @@ void Takeoff::takeoff(float altitude){
                     arm();
                 }
             }
-            last_request = Time::now();
+            last_request2 = Time::now();
+        }
+        else if (current_state_takeoff.mode == "AUTO.TAKEOFF"){
+            ROS_INFO("Takeoff Completed Successfully!");
+            break;
         }
         else{
-            break;
+            ROS_INFO("Latest mode not suitable. Re-attempting takeoff...");
+            arm();
         }
         spinOnce();
         rate.sleep();
