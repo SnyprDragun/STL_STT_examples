@@ -98,12 +98,9 @@ void Takeoff::takeoff(float altitude){
     while(ok()){
         if(current_state_takeoff.mode != "AUTO.TAKEOFF" && (Time::now() - last_request2 > Duration(5.0))){
             if(this->takeoff_client.call(takeoff_cmd) && takeoff_cmd.response.success){
-                if(current_state_takeoff.mode == "AUTO.TAKEOFF" && takeoff_position.pose.position.x > 1){
+                if(current_state_takeoff.mode == "AUTO.TAKEOFF" && takeoff_position.pose.position.z > 1){
                     ROS_INFO("Taking Off");
                     break;
-                }
-                else{
-                    arm();
                 }
             }
             last_request2 = Time::now();
