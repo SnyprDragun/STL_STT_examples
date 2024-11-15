@@ -11,6 +11,7 @@
 #include <mavros_msgs/State.h>
 #include <mavros_msgs/SetMode.h>
 #include <mavros_msgs/GlobalPositionTarget.h>
+#include <phasespace_msgs/Rigids.h>
 
 using namespace std;
 using namespace ros;

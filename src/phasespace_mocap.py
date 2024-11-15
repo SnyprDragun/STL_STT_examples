@@ -21,8 +21,13 @@ def rigids_callback(data):
         pub.publish(transform_msg)
 
 if __name__ == "__main__":
-    rospy.init_node("mocap_to_fake_gps", anonymous=True)
-    rospy.Subscriber("/phasespace/rigids", Rigids, rigids_callback)
-    pub = rospy.Publisher("/mavros/fake_gps/mocap/tf", TransformStamped, queue_size=10)
-    rospy.loginfo("Mocap to Fake GPS Bridge Node started.")
-    rospy.spin()
+    if __name__ == "__main__":
+        rospy.init_node("mocap_to_fake_gps", anonymous=True)
+        rospy.Subscriber("/phasespace/rigids", Rigids, rigids_callback)
+        pub = rospy.Publisher("/mavros/fake_gps/mocap/tf", TransformStamped, queue_size=10)
+        rospy.loginfo("Mocap to Fake GPS Bridge Node started.")
+        rate = rospy.Rate(500)
+
+        while not rospy.is_shutdown():
+            rospy.spin()
+            rate.sleep()
