@@ -133,6 +133,7 @@ add_library(${PROJECT_NAME}
   src/scripts/offboard_node.cpp
   src/scripts/landing_node.cpp
   src/scripts/mode_setter.cpp
+  # src/scripts/phasespace_mocap.cpp
   src/scripts/STT_Controller.cpp
   # src/${PROJECT_NAME}/stl_stt_examples.cpp
 )
@@ -149,6 +150,8 @@ target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
 # add_executable(${PROJECT_NAME}_node src/dd_stl_stt_node.cpp)
 add_executable(root_controller src/scripts/root_controller.cpp)
 target_link_libraries(root_controller ${catkin_LIBRARIES} ${PROJECT_NAME})
+# add_executable(phasespace_mocap src/scripts/phasespace_mocap.cpp)
+# target_link_libraries(phasespace_mocap ${catkin_LIBRARIES} ${PROJECT_NAME})
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
