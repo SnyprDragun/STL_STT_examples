@@ -16,7 +16,7 @@
   * If outside the tube, try to come inside asap.
 * Tunable parameter `k` enables sharper turns for higher values. So If your STT has sharp turns, increment `k` to handle for them.
 * Each dimension has its own tunable `k`.
-* For more insight into the controller design for STTs, follow the publication listed [here](https://github.com/SnyprDragun/STL_SpatiotemporalTubes_Toolbox/#related-publication)
+* For more insight into the controller design for STTs, follow (no link) <!-- the publication listed [here](https://github.com/SnyprDragun/STL_SpatiotemporalTubes_Toolbox/#related-publication) -->
 
 ## Setup
 * you can find the Mechanum Omnibot setup [here]()
